@@ -1,64 +1,77 @@
 # Pack File Specification
 
-Pack Files let you specify one or more modules, which are then used to generate
-Javascript modules to be loaded into a 3d application controller. (See also, 
-Pack Files as a DSL and Code Generation below.)
+Pack Files let you specify one or more modules, which are then used to generate Javascript modules to be
+loaded into a 3d application controller. Although designed for use by the SquidSpace.js library and toolset, Pack Files are generalized and could be used as inputs for other 3D applications. (See also, Pack Files as a DSL below.)
 
-A Pack File consists of JSON data containing the following top-level sections:
+A Pack File consists of JSON data containing one or more of the following named top-level objects:
 
-1. "doc" – [optional] – Documentation for the file, use to describe what the file is for 
+1. "doc" – (string; optional) – Documentation for the entire file, use to describe what the file is for 
 
-2. "config" – [required] – Global configuration details for the entire file (See also, Configuation below)
+2. "config" – (object; optional, but may be required by some pack file processors) – Global configuration details for the entire file (See also, Configuation below)
+
+3. "options" – (object; optional,; but may be required by some pack file processors) – Global options for the entire file (See also, Options below)
+
+4. "data" – (object; optional, but may be required by some pack file processors) – Global data for the entire file (See also, Data below)
 	 
-3. "modules" – [required] – A specification for each module to be generated (see also, 
+5. "modules" – (array; optional, but may be required by some pack file processors) – A specification for each module to be generated (see also, 
 	Module Section below)
-	
+
+Pack files are processed by reading them in and using them to generate something else. For example, SquidSpace provides tools that use pack files to manage asset pipelines and generate runtime javascript files. How pack files are processed, what the outputs are, and the details of what pack file values are required and how they are used are dependent on the pack file processor. (See also, Pack File Processors and Code Generation below.)
+
 Pack File example:
 
 	{
 		"doc": "Example pack file.",
 		"config": {
+			"doc": "Config values are arbitrary and application-controller dependent.",
 			"outdir": "libs/objects/"
+		},
+		"options": {
+			"doc": "Option values are arbitrary and application-controller dependent.",
+		},
+		"data": {
+			"doc": "Data values are arbitrary and application-controller dependent.",
+			"some-thing": "some value",
+			"foo": {
+				"bar": 1,
+				"baz": true,
+				"boo": "some value",
+			},
+			"world-origin": [32, 0, -20]
 		},
 		"modules": [
 			{
 			    "name": "world",
 				"doc": "example module.",
 				"config": {
-					"pretty-print": true,
-					"pretty-offset": 3
+				},
+				"options": {
 				},
 				"data": {
-					"doc": "Data values are arbitrary and application-controller dependent.",
-					"some-thing": "some value",
-					"foo": {
-						"bar": 1,
-						"baz": true,
-						"boo": "some value",
-					},
-					"world-origin": [32, 0, -20]
 				},
-				"objects": [
-					{
-						"name": "arena",
-						"doc": "Example object.",
-						"action": "insert",
-						"file": "objects/arena.babylon",
-						"config": {
-							"space-object": true
+				"resources": {
+					"objects": [
+						{
+							"name": "arena",
+							"doc": "Example object.",
+							"action": "insert",
+							"file": "objects/arena.babylon",
+							"config": {
+								"space-object": true
+							}
+						},
+						{
+							"name": "beam",
+							"action": "link",
+							"root": "objects/"
+							"file": "beam.babylon"
 						}
-					},
-					{
-						"name": "beam",
-						"action": "link",
-						"root": "objects/"
-						"file": "beam.babylon"
-					}
-				],
-				"textures": [],
-				"materials": [],
-				"lights": [],
-				"area-layouts": [
+					],
+					"textures": [],
+					"materials": [],
+					"lights": []
+				},
+				"layouts": [
 					{
 						"area": "artshow",
 						"origin": [10, 0, 30]
@@ -78,16 +91,30 @@ Pack File example:
 					}
 				],
 				wiring [
-					"mod": "squidmmo"
-					"config": {},
-					"options": {},
+					{
+						"mod": "squidmmo"
+						"config": {},
+						"options": {},
+					}
 				]
 			}
 		]
 	}
 	
 
+## Doc
+
+A 'doc' string may appear as a member of any object in a pack file, including at the top level. The purpose of doc strings is to provide human-readable comments and explanations for that object.
+
 ## Configuration
+
+A 'config' object may appear as a member of any object in a pack file, including at the top level. The purpose of config objects is to set the configuration values used when processing the object they are attached to. What named values a configuration may contain and how they are used is dependent both on the pack file processor
+
+## Options
+
+TODO:
+
+## Data
 
 TODO:
 
@@ -101,8 +128,7 @@ Required global configuration values include:
 
 ## Module Section
 
-The Module Section of a Packfile is a list of one or more modules to generate. Each module 
-list item consists of a specification for a single module to generate output for. 
+The Module Section of a Packfile is a list of one or more modules to generate. Each module list item consists of a specification for a single module to generate output for. 
 
 A module specification consists of JSON data containing the following top-level sections:
 
@@ -151,10 +177,7 @@ values depending on the section type (see also, Loader Sections below):
 
 ### Loader Sections
 
-All Loaders of a Module are lists of one or more sets of data loading specifications to add 
-to the generated module. Each list item consists of a specification for a single set of 
-data, whether object geometry, texture data, or whatever. A loader specification consists 
-of the following values:
+All Loaders of a Module are lists of one or more sets of data loading specifications to add to the generated module. Each list item consists of a specification for a single set of data, whether object geometry, texture data, or whatever. A loader specification consists of the following values:
 
 1. "name" – [required] – The name of the object, used for the object name in the generated 
    module (see also, Code Generation below) and used as the ID value for all the loaded meshes
@@ -224,10 +247,7 @@ TODO: Implement and Document.
 
 ### Builtins
 
-Builtins are 3D content 'built in' to Babylon.js, SquidSpace or SquidSpace
-Plugins with prepare handlers. What builtins are available depends on the 
-particular plugins loaded. See the SquidSpace documentation for a list 
-of the default builtins and their expected data layouts.
+Builtins are 3D content 'built in' to Babylon.js, SquidSpace or SquidSpace Plugins with prepare handlers. What builtins are available depends on the particular plugins loaded. See the SquidSpace documentation for a list of the default builtins and their expected data layouts.
 
 ### Area Layouts
 
@@ -245,35 +265,26 @@ TODO: Implement and Document.
 
 TODO: Implement and Document.
 
+
+## Pack File Processors
+
+TODO:
+
 ## Pack Files as a DSL
 
-Pack Files support enough complexity to act as a [DSL (Domain-Specific-Language)](https://en.wikipedia.org/wiki/Domain-specific_language) 
-for arbitrary 3D Graphics applications. A DSL is basically a tiny programming 
-language, often declarative, which is focused on a very specific problem domain. 
+Pack Files support enough complexity to act as a [DSL (Domain-Specific-Language)](https://en.wikipedia.org/wiki/Domain-specific_language) for arbitrary 3D Graphics applications. A DSL is basically a tiny programming language, often declarative, which is focused on a very specific problem domain. 
 
-SquidSpace uses the Pack File DSL capability to declare the functionality for 
-walkthrough simulations. However, Pack Files are generic enough to drive a completely
-different kind of 3D application through that application providing different 
-data, builtins and hooks and/or doing object placement differently.
+SquidSpace uses the Pack File DSL capability to declare the functionality for walkthrough simulations. However, Pack Files are generic enough to drive a completely different kind of 3D application through that application providing different data, builtins and hooks and/or doing object placement differently.
 
 ## Code Generation
 
-The Pack File is used as input to a packer, which then generates some sort of 
-application-specific code. The SquidSpace 'spacepacker' utility generates 
-an older-style javascript module, which allows loading without being blocked by 
-CORS when the requesting HTML file is opened from a file system. If you 'insert'
-all of your 3D content into the generated modules you can run SquidSpace without
-requiring a web server. 
+The Pack File is used as input to a packer, which then generates some sort of application-specific code. The SquidSpace 'spacepacker' utility generates an older-style javascript module, which allows loading without being blocked by CORS when the requesting HTML file is opened from a file system. If you 'insert'
+all of your 3D content into the generated modules you can run SquidSpace without requiring a web server. 
 
-For more details on the module file interface generated by spacepacker, see 
-the SquidSpace documentation. 
+For more details on the module file interface generated by spacepacker, see the SquidSpace documentation. 
 
-NOTE: It is possible to create your own SquidSpace content modules from scratch
-or to edit generated SquidSpace content modules. However, pack files are 
-almost certainly simpler to use.
+NOTE: It is possible to create your own SquidSpace content modules from scratch or to edit generated SquidSpace content modules. However, pack files are almost certainly simpler to use.
 
 ## Copyright 
 
-SquidSpace, the associated tooling, and the documentation are copyright Jack William Bell 2020. 
-All other content, including HTML files and 3D assets, are copyright their respective
-authors.
+SquidSpace, the associated tooling, and the documentation are copyright Jack William Bell 2020.  All other content, including HTML files and 3D assets, are copyright their respective authors.
