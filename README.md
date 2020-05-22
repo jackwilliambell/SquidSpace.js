@@ -24,14 +24,13 @@ None at this time.
 
 Start by reading the code and [the documentation](docs/introduction.md). Look at [the examples](docs/examples.md). Dive in and create your own space. If you have questions or encounter bugs, please open an issue on Github.
 
-### Copyright, License and Reliquishement of Copyright
+### Copyright, License, and Reliquishement of Contributor Copyright
 
-SquidSpace.js, which includes squidspace.js, the squidmods, the associated tooling, and the documentation are 
-copyright the project maintainer, Jack William Bell, 2020. All other content, including HTML files, third party libraries, and 3D assets, are copyright their respective authors.
+SquidSpace.js, which includes the squidspace.js library, the squidmods, the associated tooling, and the documentation are copyright the project maintainer, Jack William Bell, 2020. All other content, including HTML files, third party libraries, and 3D assets, are copyright their respective authors.
 
 This project will remain available under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 Open Source license until and unless that license is changed in a future version. Versions created prior to that point will retain that license. You are encouraged to branch this project and work on it separately under that license, with the understanding the copyright to any code created by the project maintainer resides with them.
 
-By submitting a Pull Request to this project for anything but examples or third-party libraries you agree (a) the work submitted is your own work and (b) to relinquish any copright claim to the maintainer of this project. If you are unable to agree to both (a) and (b) your PR will not be accepted. In the case of examples, the submitter will retain copyright to that example under the same terms as above, even if subsequently modified by others. The same applies to third party libraries. However, all owner-copyrighted work must have a compatable Open Source license.
+By submitting a Pull Request to this project for anything but examples or third-party libraries you are required to agree (a) the work submitted is your own work and (b) to relinquish any copright claim to the maintainer of this project. If you are unable to agree to both (a) and (b) your PR will not be accepted. In the case of examples, the submitter will retain copyright to that example under the same terms as above, even if subsequently modified by others. The same applies to third party libraries. However, all owner-copyrighted work must have a compatable Open Source license.
 
 This requirement exists because the maintainer of the project may wish in the future to sell separate commercial licenses to SquidSpace.js – while retaining the Open Source license for other uses – and it would be too difficult to determine who owns copyright on how much and which code when doing so. 
 

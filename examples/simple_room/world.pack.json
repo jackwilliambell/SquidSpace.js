@@ -1,0 +1,130 @@
+{
+	"doc": "SquidSpace example: Simple Room - a very basic room made using only procedurals and builtins.",
+	"config": {
+		"doc": "'outdir' specifies where the output files are generated.",
+		"outdir": "libs/dungeon_room/"
+	},
+	"options": {
+		"doc": "No options.",
+	},
+	"data": {
+		"doc": "No data.",
+	},
+	"modules": [
+		{
+			"doc": "The world module specifies .",
+		    "name": "world",
+			"config": {
+				"doc": "No config."
+			},
+			"options": {
+				"doc": "No options."
+			},
+			"data": {
+				"doc": "'world-origin' specifies a NE corner of the world, from which all world locations originate.",
+				"world-origin": [0, 0, 0]
+			},
+			"resources": {
+				"textures": [
+					
+				],
+				"materials": [
+					
+				],
+				"objects": [
+					{
+						"name": "arena",
+						"doc": "Example object.",
+						"config": {
+							"space-object": true,
+						},
+						"data": {
+							"action": "insert",
+							"file": "objects/arena.babylon"
+						}
+					},
+					{
+						"name": "beam",
+						"data": {
+							"action": "link",
+							"root": "objects/",
+							"file": "beam.babylon"
+						}
+					}
+				],
+				"lights": [
+					
+				]
+			},
+			"layouts": [
+				{
+					"name": "beam",
+					"doc": "Example object.",
+					"config": {
+						"doc": "No config."
+					},
+					"options": {
+						"doc": "No options."
+					},
+					"data": {
+						"doc": "No data."
+					},
+					"object-placements": [
+						{
+							"object": "beam",
+							"doc": "Example object.",
+							"config": {
+								"doc": "No config."
+							},
+							"options": {
+								"doc": "No options."
+							},
+							"data": {
+								"doc": "No data."
+							},
+							"placements": [
+								{
+									"placer": "linear-series",
+									"doc": "Example 'linear-series' placement.",
+									"config": {
+										"doc": "No config.",
+										"count": 8,
+										"position": [
+											20,
+											0.01,
+											1.6
+										],
+										"offset": 0.3,
+										"rotation": "= Math.PI / 2",
+										"across": true
+									},
+									"options": {
+										"doc": "No options."
+									},
+									"data": {
+										"doc": "No data."
+									}
+								}
+							]
+							
+						}
+					]
+				}
+			],
+			"wiring": [
+				{
+					"mod": "squidmmo",
+					"config": {
+						"doc": "No config."
+					},
+					"options": {
+						"doc": "No options."
+					},
+					"data": {
+						"doc": "No data."
+					},
+				}
+			]
+		}
+	]
+}
