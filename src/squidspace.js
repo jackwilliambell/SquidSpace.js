@@ -51,7 +51,7 @@ var SquidSpace = function() {
 	// Module data.
 	//
 
-	// TODO: Refactor to remove these.
+	// TODO: Refactor to remove these. (Put in squidhall.js or SquidCommons?)
 	var pnlwidth = 1;
 	var norot = 0; // Do not rotate.
 	var rot = Math.PI / 2; // Rotate 90 degrees.
@@ -71,14 +71,13 @@ var SquidSpace = function() {
 	var prepareHook = function(scene){self.logInfo("prepareHook()");};
 	var buildHook = function(scene){self.logInfo("buildHook()");};
 	var placerHooks = {};
+	var userModeHooks = {};
 	
 	var eventHandlers = {};
-
 
 	//
 	// Helper functions.
 	//
-
 
 	var getValIfKeyInDict = function(key, dict, defaultVal) {
 		if ((dict != undefined) && (typeof dict === "object")) {
@@ -90,11 +89,9 @@ var SquidSpace = function() {
 		return defaultVal;
 	}
 
-
 	//
 	// Object spec loader.
 	//
-	
 	
 	var objectSpecLoader = function(objDict, scene, onSuccessFunc) {
 		for (key in objDict) {
@@ -108,6 +105,9 @@ var SquidSpace = function() {
 				config = objDict[key]["config"];
 				visible = getValIfKeyInDict("space-object", config, false);
 			}
+			
+			// TODO: Refactor to use hooks. Remove and refactor builtins
+			//       as loader hooks.
 			let builtin = getValIfKeyInDict("builtin", objDict[key], false);
 			
 			if (builtin) {
@@ -172,13 +172,10 @@ var SquidSpace = function() {
 		}
 	}
 	
-	
 	//
 	// Builtins.
 	//
-	// TODO: Create 'object' builtin hooks. Move these to builtin hooks.
-	// 
-	// TODO: Create 'texture', 'material', and 'light' builtin hooks. 
+	// TODO: Remove and refactor these into SquidCommons hooks. 
 	//
 
 	var addFloor = function (x, y, z, w, d, material, scene) {
@@ -206,7 +203,6 @@ var SquidSpace = function() {
 		return floor;
 	}
 
-
 	var addFloorSection = function(secName, x, z, w, d, material, scene) {
 		var floorSection = BABYLON.MeshBuilder.CreatePlane(secName, 
 												{width: w, height:d}, scene);
@@ -216,7 +212,6 @@ var SquidSpace = function() {
 		floorSection.material.backFaceCulling = false;
 		return floorSection;
 	}
-	
 	
 	var addCamera = function(x, y, z, targetX, targetY, targetZ, scene) {
 
@@ -283,10 +278,8 @@ var SquidSpace = function() {
 		return camera;
 	}
 	
-	
 	// TODO: Spec loaders for materials, lights, etc.
 	
-
 	//
 	// Layout spec loader.
 	//
@@ -372,14 +365,12 @@ var SquidSpace = function() {
 		}
 	}
 	
-	
 	//
 	// Layout Placers.
 	//
 	
 	// TODO: Implement.
 
-	
 	return {
 		//
 		// Public helper functions.
@@ -477,8 +468,6 @@ var SquidSpace = function() {
 			);
 		},
 
-		// TODO: Light management functions.
-
 		//
 		// Texture management functions.
 		//
@@ -491,7 +480,6 @@ var SquidSpace = function() {
 			// Keep a local reference to the texture.
 			textures[texName] = texture;
 		},
-		
 		
 		/** Returns the texture for the passed texture name, assuming the texture was 
 		specified in the pack file, loaded with the loadTexture(),
@@ -647,12 +635,35 @@ var SquidSpace = function() {
 			
 			return undefined;
 		},
+
+		//
+		// Light management functions.
+		//
+		// TODO: More.
+		//
 		
+		addLightInstance: function(ltName, light) {		
+			// TODO: Check if ltName already exists. Decide how to handle. (Error?)
+			
+			// Keep a local reference to the texture.
+			lights[ltName] = light;
+		},
 		
+		/** Returns the light for the passed light name, assuming the light was 
+		specified in the pack file, loaded with the loadLight(),
+		or added with the addLightInstance() function. If the light is available it 
+		is returned. If it was not it returns 'undefined'. */
+		getLight: function(ltName) {
+			if (ltName in lights) {
+				return lights[ltName];
+			}
+			
+			return undefined;
+		},
+
 		//
 		// Layout helper functions.
 		//
-
 	
 		/** Adds a single instance to a placements array at the passed position
 		    and rotation.
@@ -665,7 +676,6 @@ var SquidSpace = function() {
 		addSingleInstanceToPlacements: function(instanceName, placements, x, z, rotation) {
 			placements.push([instanceName, x, z, rotation]);
 		},
-	
 	
 		/** Adds a count series of placements elements to an existing placements array, 
 			starting at the the provided x and z and separated by the provided offset. If 
@@ -690,7 +700,6 @@ var SquidSpace = function() {
 				}
 			}
 		},
-
 
 		/** Adds a count wide and count deep series of placements elements to an 
 		    existing placements array in the form of a rectangle, 
@@ -767,7 +776,6 @@ var SquidSpace = function() {
 				SquidSpace.addObjectInstance(instance[0], newMeshes);			
 			}
 		},
-
 
 		//
 		// Logging.
@@ -860,7 +868,7 @@ var SquidSpace = function() {
 		    or custom object placements.
 		
 		    Signature: hookFunction(areaName, areaOrigin, config, placeName, data, 
-		                            objName, meshes, scene)
+		                            objName, meshes, scene) {return: boolean}
 		 */
 		attachPlacerHook: function(hookName, hookFunction) {
 			let oldHook = placerHooks[hookName];
@@ -868,12 +876,30 @@ var SquidSpace = function() {
 			return oldHook;
 		},
 		
+	 	/** The UserModeHook is called by name to modify the user camera settings and 
+			other user related values with the setUserMode() function, where the hook 
+			name is the name of the user mode.
+		
+			The SquidSpace.js SquidDebug mod adds 'debug', 'debug-inspect' and 
+			'inspect' user modes.
+		
+			The SquidSpace.js SquidWalkthrough mod adds 'walk' and 'run' user modes.
+		
+			NOTE: The user camera is set up as an object during worldBuild() processing. Some 
+			user cameras may not be compatable with particular user modes. 
+	
+		    Signature: hookFunction(options, data, userCamera, scene) {return: boolean}
+		 */
+		attachUserModeHook: function(hookName, hookFunction) {
+			let oldHook = userModeHooks[hookName];
+			userModeHooks[hookName] = hookFunction;
+			return oldHook;
+		},
 
 		//
 		// Events.
 		//
 
-		
 		attachClickEventToObject: function(objName, eventName, eventData, scene) {
 			meshes = SquidSpace.getLoadedObjectMeshes(objName);
 			
@@ -896,7 +922,6 @@ var SquidSpace = function() {
 			}
 		},
 		
-		
 		fireOnClickEvent: function(eventName, sourceObjectName, eventData) {
 			if (eventName in eventHandlers) {
 				for (hdlr of eventHandlers[eventName]) {
@@ -905,7 +930,6 @@ var SquidSpace = function() {
 			}
 		},
 		
-
 		addEventHandler: function(eventName, handlerFunc) {
 			if (!(eventName in eventHandlers)) {
 				// Initialize the event name with an empty array.
@@ -916,11 +940,9 @@ var SquidSpace = function() {
 			eventHandlers[eventName].push(handlerFunc);
 		},
 		
-		
 		removeEventHandler: function(eventName, handlerFunc) {
 			if (!(eventName in eventHandlers)) {
 				// No event handlers! Bail now.
-				return;
 			}
 			
 			// Find the handler function in the array and remove it.
@@ -930,14 +952,39 @@ var SquidSpace = function() {
 			}
 		},
 		
+		//
+		// User functions.
+		//
+		
+		/** Returns the current user camera object. */
+		getUserCamera: function() {
+			return objects["userCamera"];
+		},
+				
+		/** Sets the user mode to the passed mode using the passed options 
+			and data. There must be a user mode hook with the mode name. Returns
+			false if the user mode is not available, otherwise returns the 
+			user mode hook function result.
+		*/
+		setUserMode: function(modeName, options, data, scene) {
+			if (modeName in userModeHooks) {
+				return userModeHooks[modeName](options, data, 
+					SquidSpace.getUserCamera(), scene);
+			}
+
+			// Failed. 
+			SquidSpace.logError(`Unknown user mode: ${modeName}`)
+			return false;
+		},
 		
 		//
 		// Public scene management functions.
 		//
 		
-		
 		/** PoC-specific function to load the passed scene from the world 
 		    and content specs. 
+		
+			If not provided, userMode defaults to 'default'. 
 		*/
 		buildWorld: function(worldSpec, contentSpecs, scene) {
 			// Assume success.
@@ -955,7 +1002,7 @@ var SquidSpace = function() {
 			*/
 		
 			// Turn on optimizaton.
-			// TODO: Either make these optional or move them to a hook.
+			// TODO: Remove and refactor into SquidCommon as a hook. (New hook?)
 			var options = new BABYLON.SceneOptimizerOptions();
 			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
 			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
@@ -983,13 +1030,10 @@ var SquidSpace = function() {
 			*/
 			//optimizer.start(); // Don't need?
 
-		 	/* TODO: Remove and refactor.
-			// TODO: Make this dynamic somehow.
-			// TODO: Either make this optional or move it to a hook.
+		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
 			if (debugLayer) scene.debugLayer.show();
 			*/
 			
-		
 			// Call prepare hook.
 			// TODO: try/catch.
 			prepareHook(scene);
@@ -1031,12 +1075,11 @@ var SquidSpace = function() {
 				objectSpecLoader(getValIfKeyInDict("objects", spec, {}), scene, null);
 				layoutSpecLoader(getValIfKeyInDict("layouts", spec, []), scene);
 			}
-
+			
+		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
 			// Set gravity for the scene (G force on Y-axis)
 			// See https://doc.babylonjs.com/babylon101/cameras,_mesh_collisions_and_gravity
 			// TODO: Determine best settings here.
-			
-		 	/* TODO: Remove and refactor.
 			if (debugVerbose) {
 				// TODO: Give this it's own argument instead of debugVerbose.
 				// Allow user to fly.
