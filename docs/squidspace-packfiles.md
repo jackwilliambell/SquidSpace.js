@@ -27,33 +27,7 @@ TODO
 
 ## SquidSpace.js-Specific Pack File Values
 
-SquidSpace.js supports some special value types to extend the capapabilities of Pack Files. These include Expression Strings, Binary Strings, Hook Function References, and Event Subsections.
-
-### Expression Strings ($=)
-
-SquidSpace.js Pack Files supports 'Expression Strings'. Any JSON string value starting with the characters '$=' is an Expression String and the entire contents of the string after those characters is considered to be a Javascript expression, not a standard JSON string value.
-
-Expression Strings can be used for any data value of any type, so long as the expression they contain returns the correct value type.
-
-WARNING: Expression Strings can result in runtime failures if they are not valid Javascript. They may also introduce difficult to track down bugs since they are added to generated code as opposed to hand-written code. Use them carefully and keep these facts in mind.
-
-Examples:
-
-	"rotation": "$= Math.pi * 90"
-
-	"rotation": "$= SquidSpace.rotate180"
-
-	"position": "$= [16, MyMod.getFloaterHeight(), 35 * MyMod.backOffsetDefault]"
-
-	"data": "$= PrivateLoaderFunc('foo')"
-
-### Binary Strings ($#)
-
-SquidSpace.js Pack Files supports 'Binary Strings' in Base64 format. Any JSON string value starting with the characters '$#' is a Binary String and the entire contents of the string after those characters must be Base64 data. SquidSpace itself does not translate Binary Strings from Base64, instead it expects the code it passes it to to know the data is in Base64 form and to handle it correctly.
-
-WARNING: Binary Strings can result in runtime failures if they are not valid Base64 or if the data they contain is not the data or data type that was expected. Use them carefully and keep these facts in mind.
-
-TODO: Example
+SquidSpace.js supports some special data values to extend the capapabilities of Pack Files. These include Hook Function References and Event Subsections.
 
 ### Hook Function References
 
@@ -98,7 +72,7 @@ Pack File sections currently supporting Events in their options are:
 	- TODO: Keypress events?
 
 * Layout Areas - Each layout area can specify events related to objects and the area boundaries
-	- TODO: 
+	- TODO: List of layout area events
 
 * Object Placements – Each object placement can specify events for that object when it is placed
 	- "on-click": Makes the object clickable and fires related events when the object is clicked
@@ -178,15 +152,15 @@ Modules are an array of Module JSON objects specified with the key "modules" fro
 
 ### Module Options
 
-None at this time.
-
-### Module Data
-
-Module data must be of type JSON object. The following named values are supported:
+Module options must be of type JSON object. The following named values are supported:
 
 * "world-origin" – [optional if config:is-world is true, otherwise do not use, array of x, y, z values] Used to specify the NW corner of the world as an origin point; defaults to [0, 0, 0]
 
 TODO: World-level events, such as "on-keypress".
+
+### Module Data
+
+None at this time.
 
 ## Resources
 
@@ -260,6 +234,8 @@ At this time Materials do not have a data type that can be specified for inserti
 
 Material resources support the Standard Resource Options. They may contain values dependent on the Resource Loader Hook Function specified in the configuration.
 
+TODO: Specify the SquidSpace builtin materials.
+
 ### Material Data
 
 Material resource data values and types are dependent on the Resource Loader Hook Function specified in the configuration.
@@ -322,15 +298,126 @@ Layouts are JSON arrays containing a list of Layout Area JSON objects. Layouts d
 
 ## Layout Areas
 
-Layout Areas are JSON objects TODO
+Layout Areas are JSON objects specifying a single area within the 3D space, each of which contain zero or more 'object placements' specifying what objects the Layout Area contains and where they are located. Layout areas are dimennsioned as rectangular with a width and depth and specified with an origin point based off of the world origin. 
+
+Layout Areas are singlular and contiguous, but may overlap with other Layout Areas. The object placements they contain use the layout area origin point when placing 'standalone' objects, but do not need to be located within the Layout Area.
+
+### Layout Area Configuration
+
+None at this time.
+
+### Layout Area Options
+
+Layout Area options must be of type JSON object. The following named values are supported:
+
+* "origin" – [required if the Layout Area is included in a World specification module, required if specifying a Layout Area not also specified in a World specification module, otherwise do not use; array of x, y, z values] Used to specify the NW corner of the Layout Area as an origin point, based on the World origin point
+
+* "events" – [optional ]
+
+TODO: Layout Area-level events, such as "on-keypress", "on-user-enter/leave", etc.
+
+NOTE: If the origin is specified for a Layout Area of the same name in the World specification module and in a separate module for a Layout Area of the same name, the "origin" value from the World specification module is used and the separate module's "origin" value is ignored.
+
+NOTE: A common use case is to declare Layout Areas with no or few object placements in a World specification module and then re-use those named Layout Areas in other modules, adding other object placements.
+
+### Layout Area Data
+
+None at this time.
 
 ## Object Placements
 
-TODO
+Object Placements are JSON objects specifying zero or more 'placements' for a single object within a Layout Area, each of which contain zero or more 'placements' specifying the places that object is located. 
+
+Object Placements specify a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a 'builtin' by the runtime. All of the contained placements are for the same object using the same Object Placement options.
+
+WARNING! Specifying an object name that is not loaded results in undefined behavior. 
+
+### Object Placement Configuration
+
+None at this time.
+
+### Object Placement Options
+
+* "materials" – [optional, JSON array] – Specifies zero or more materials and the named submeshes to apply the materials to:
+	- "material" – [required, name of a loaded material] - Specifies the material to use
+	- "submesh" – [optional, name of a submesh within the object] – Specifies applying the named material to a named submesh; if not provided the material is applied to all submeshes
+
+* "events" – [optional, Events subsection] – Specifies one or more events applying to all object placements
+
+The Materials option specify a named material, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a 'builtin' by the runtime. 
+
+NOTE: Applying materials to an Object Placement creates a 'clone' of the named object and all placements are instances of that clone. If no materials are applied all placements are instances of the original object. Generally clones create more geometry in the World space and use more memory and other runtime resources, so they should be avoided if possible.
+
+WARNING! Specifying a material name that is not loaded results in undefined behavior. 
+
+WARNING! Specifying multiple materials for the same submesh results in undefined behavior. 
+
+### Object Placement Data
+
+None at this time.
 
 ## Placements
 
-TODO
+Placements are JSON objects specifying the location in the World space of an instance of the object specified in the containing Object Placement. Each Placement must specify a named "placer" algorithm to use, which must be a SquidSpace.js builtin placer or a 'Placer Hook' loaded from a mod. Placements must also specify a unique "place-name" used within the Layout Area for the object instance(s) being placed. 
+
+NOTE: If a placer algorithm results in multiple instances of the object, the instances are named using the "place-name" specified, with a dash ('-') and a number appended, where that number is zero to the number of instances placed minus one.
+
+### Placement Configuration
+
+None at this time.
+
+### Placement Options
+
+The Placement options are dependent on the placer algorithm. Some builtin placer algorithms have specific options and if the placer algorithms specified is for a 'placer hook' the data subsection may contain any values expected by the Hook Function.
+
+Standard option values for all Placer Algorithms, both builtins and 'placer hook functions' include:
+
+* "position" – [optional; array of x, y, z values, defaults to [0, 0, 0]] – Specifies the position of the placed object; if "place-on-object" is not specified the position is based on the Layout Area's origin, otherwise the position is based on the named submesh's origin (TODO: Find out Babylon.js standard origin point for submeshes); see below for "place-on-object" values
+
+* "rotation" – [optional; number value specifying the rotation of all placed objects for a placement, defaults to 0]
+
+All SquidSpace.js builtins and some 'placer hook functions' also support:
+
+* "place-on-object" – [optional; the name of an object previously placed in the World Space within the same Layout Area] – Specifies an object to place an instance of this Object Placement on
+
+* "place-on-submesh" – [required if "place-on-object" is specified, otherwise do not use; A submesh of the object specified with the "place-on-object" value
+
+NOTE: A common submesh naming pattern for objects which will have other objects placed on them is to use 'top', 'bottom', 'left', 'right', 'front', and 'back' if possible. 
+
+WARNING: "place-on-object" values are dependent on object loading order. This is determined by the order in which the pack file modules are passed to SquidSpace.js, where the first module loaded is *always* the World specification module, after which other pack file modules are loaded in an order specified when SquidSpace.js is initialized at runtime.
+
+TODO: Find a way to remove the loading order issue. One option is to defer on-object placements until all objects are placed, but that raises the issue of what happens when you place an object on an object placed on another object.
+
+For other possible placement option values, see Builtin Placer Algorithms below.
+
+### Placement Data
+
+There are no standard Placement data subsection values at this time. If the placer algorithms specified is for a 'placer hook' the data subsection may contain any values expected by the Hook Function.
+
+### Builtin Placer Algorithms
+
+SquidSpace.js includes a number of builtin placer algorithms, any of which may be overridden by a 'placer hook function' using the same name and using the same options. 
+
+The builtin placer algorithms are:
+
+* "single" – Places a single instance of an object in a particular location; requires only standard placement options values
+
+* "linear-series" - Places a row of instances of an object starting from a particular location; requires the standard placement options values, plus:
+	- "count" – [required; integer] – Specifies number of object instances to place in a row
+	- "across" – [optional; boolean, default is true] – Specifies whether the series goes from lesser 'x' to a greater 'x' value (true) or from lesser 'z' to a greater 'z' value (false)
+	- "offset" – [optional; number, default is '0'] – Specifies in size units the offset between objects when they are placed, if a negative value the objects may overlap
+
+* "rectangle" - Places a rectangle of instances of an object starting from a particular location; requires the standard placement options values, plus:
+	- "countWide" – [required; integer] – Specifies number of object instances to place in a row from lesser 'x' to a greater 'x' value
+	- "countDeep" – [required; integer] – Specifies number of object instances to place in a row from lesser 'z' to a greater 'z' value
+	- "lengthOffset" – [optional; number, default is '0'] – Specifies in size units the offset between objects along the 'x' axis when they are placed, if a negative value the objects may overlap
+	- "widthOffset" – [optional; number, default is '0'] – Specifies in size units the offset between objects along the 'x' axis when they are placed, if a negative value the objects may overlap
+
+NOTE: "linear-series" and "rectangle" placement objects only place along the 'x' and 'z' axis's. The 'y' axis is fixed from the placement's position.
+
+TODO: Consider ways to do 'y' axis placement.
+
+TODO: Determine if we need other builtin placement algorithms.
 
 ## Wirings
 

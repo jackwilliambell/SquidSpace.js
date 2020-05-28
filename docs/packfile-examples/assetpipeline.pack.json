@@ -1,0 +1,202 @@
+{
+	"doc": "SquidSpace.js documentation example: Asset Pipeline pack file.",
+	"config": {
+		"doc": "Local file globals. Also itnherits pack file general configuration from the World pack file.",
+		"texture-dir": "root/foo/textures",
+		"object-dir": "root/foo/objects",
+	},
+	"modules": [
+		{
+		    "name": "ArtShow",
+			"doc": "Single module specifying resources and placements for a single layout area. This is a limited example file with a small number of resources and layouts.",
+			"resources": {
+				"textures": [
+					{
+						"name": "NicePicture",
+						"doc": "Example picture texture.",
+						"config": {
+							"action": "cache",
+						},
+						"data": "nicepic1.png"
+					},
+					{
+						"name": "AnotherNicePicture",
+						"doc": "Example picture texture.",
+						"config": {
+							"action": "cache",
+						},
+						"data": "nicepic2.png"
+					}
+				],
+				"materials": [
+					{
+						"name": "art-materials",
+						"doc": "Example material using a hook function that creates a number of materials from a list of textures.",
+						"config": {
+							"action": "hook",
+							"hook": "MakeStandardMaterialsFromNamedTextures"
+						},
+						"data": [
+							"NicePicture",
+							"AnotherNicePicture"
+						]
+					}
+				],
+				"objects": [
+					{
+						"name": "PictureFrame",
+						"doc": "Builtin object.",
+						"config": {
+							"action": "hook",
+							"hook": "PictureFrameObject"
+						}
+					},
+					{
+						"name": "BigSculpture",
+						"doc": "Example object.",
+						"config": {
+							"action": "cache",
+						},
+						"data": "bigsculpture.obj"
+					},
+					{
+						"name": "SmallSculpture",
+						"doc": "Example object.",
+						"config": {
+							"action": "insert",
+						},
+						"data": "smallsculpture.babylon"
+					},
+					{
+						"name": "SpecialSculpture",
+						"doc": "Example object loaded as a builtin using a hook.",
+						"config": {
+							"dir": "root/bar/objects",
+							"action": "hook",
+							"hook": "SpecialLoader"
+						},
+						"data": {
+							"file": "special.obj",
+							"special-number": 16,	
+							"do-something-really-special": false
+						}
+					}
+				]
+			},
+			"layouts": [
+				{
+					"name": "art-show",
+					"doc": "These layouts only apply to the art show area. Note the 'art-show' section is also specified in the World pack file, so there is no need to specify the origin here.",
+					"object-placements": [
+						{
+							"object": "PictureFrame",
+							"doc": "Example picture placement.",
+							"options": {
+								"materials": {
+									"doc": "Uses material created by 'art-materials' above.",
+									"material": "NicePicture",
+									"submesh": "canvas"
+								}
+							},
+							"placements": [
+								{
+									"placer": "single",
+									"doc": "Example single placement.",
+									"options": {
+										"doc": "Place on front of panel 1-1-0, centered and a meter up.",
+										"position": [0.5, 1, 0.5],
+										"place-on-object": "art-show-pnl-1-0",
+										"place-on-submesh": "front"
+									}
+								}
+							]
+						},
+						{
+							"object": "PictureFrame",
+							"doc": "Another example picture placement.",
+							"options": {
+								"materials": {
+									"doc": "Uses material created by 'art-materials' above.",
+									"material": "AnotherNicePicture",
+									"submesh": "canvas"
+								}
+							},
+							"placements": [
+								{
+									"placer": "single",
+									"doc": "Example single placement.",
+									"options": {
+										"doc": "Place on back of panel 1-1-0, centered and a meter up.",
+										"position": [0.5, 1, 0.5],
+										"place-on-object": "art-show-pnl-1-0",
+										"place-on-submesh": "back"
+									}
+								}
+							]
+						},
+						{
+							"object": "BigSculpture",
+							"doc": "Example sculpture placement.",
+							"options": {
+								"materials": {
+									"doc": "Uses a 'builtin material created by a mod during runtime startup.",
+									"material": "BasicSculptureMat"
+								}
+							},
+							"placements": [
+								{
+									"placer": "single",
+									"doc": "Example single placement.",
+									"options": {
+										"doc": "Place on center of table 1-2.",
+										"position": [0.75, 0, 0.5],
+										"place-on-object": "art-show-Table-1-2",
+										"place-on-submesh": "top"
+									}
+								}
+							]
+						},
+						{
+							"object": "SmallSculpture",
+							"doc": "Example sculpture placement.",
+							"options": {
+								"materials": {
+									"doc": "Uses a 'builtin material created by a mod during runtime startup.",
+									"material": "BasicSculptureMat"
+								}
+							},
+							"placements": [
+								{
+									"placer": "single",
+									"doc": "Example single placement.",
+									"options": {
+										"doc": "Place on left of table 1-1.",
+										"position": [0.05, 0, 0.5],
+										"place-on-object": "art-show-Table-1-1",
+										"place-on-submesh": "top"
+									}
+								}
+							]
+						},
+						{
+							"object": "SpecialSculpture",
+							"doc": "Example sculpture placement. Has it's own materials already loaded.",
+							"placements": [
+								{
+									"placer": "single",
+									"doc": "Example single placement.",
+									"options": {
+										"doc": "Place on right of table 1-1.",
+										"position": [1, 0, 0.5],
+										"place-on-object": "art-show-Table-1-1",
+										"place-on-submesh": "top"
+									}
+								}
+							]
+						},
+					]
+				}
+			]
+		}
+	]
+}

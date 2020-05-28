@@ -22,139 +22,9 @@ A Pack File consists of JSON data containing one or more of the following named 
 
 Pack File example:
 
-TODO: Update to a more complete example.
+TODO: Create a good generic exammple.
 
-	{
-		"doc": "SquidSpace example: Simple Room - a very basic room made using only procedurals and builtins.",
-		"config": {
-			"doc": "'outdir' specifies where the output files are generated.",
-			"outdir": "libs/dungeon_room/"
-		},
-		"options": {
-			"doc": "No options.",
-		},
-		"data": "No data.",
-		"modules": [
-			{
-				"doc": "The world module specifies .",
-			    "name": "world",
-				"config": {
-					"doc": "No config."
-				},
-				"options": {
-					"doc": "No options."
-				},
-				"data": {
-					"doc": "'world-origin' specifies a NE corner of the world, from which all world locations originate.",
-					"world-origin": [0, 0, 0]
-				},
-				"resources": {
-					"textures": [
-					
-					],
-					"materials": [
-					
-					],
-					"objects": [
-						{
-							"name": "arena",
-							"doc": "Example object.",
-							"config": {
-								"space-object": true,
-							},
-							"data": {
-								"action": "insert",
-								"file": "objects/arena.babylon"
-							}
-						},
-						{
-							"name": "beam",
-							"data": {
-								"action": "link",
-								"root": "objects/",
-								"file": "beam.babylon"
-							}
-						}
-					],
-					"lights": [
-					
-					],
-					"mods": [
-					
-					]
-				},
-				"layouts": [
-					{
-						"name": "beam",
-						"doc": "Example object.",
-						"config": {
-							"doc": "No config."
-						},
-						"options": {
-							"doc": "No options."
-						},
-						"data": {
-							"doc": "No data."
-						},
-						"object-placements": [
-							{
-								"object": "beam",
-								"doc": "Example object.",
-								"config": {
-									"doc": "No config."
-								},
-								"options": {
-									"doc": "No options."
-								},
-								"data": {
-									"doc": "No data."
-								},
-								"placements": [
-									{
-										"placer": "linear-series",
-										"doc": "Example 'linear-series' placement.",
-										"config": {
-											"doc": "No config.",
-											"count": 8,
-											"position": [
-												20,
-												0.01,
-												1.6
-											],
-											"offset": 0.3,
-											"rotation": "= Math.PI / 2",
-											"across": true
-										},
-										"options": {
-											"doc": "No options."
-										},
-										"data": {
-											"doc": "No data."
-										}
-									}
-								]
-							
-							}
-						]
-					}
-				],
-				"wiring": [
-					{
-						"mod": "squidmmo",
-						"config": {
-							"doc": "No config."
-						},
-						"options": {
-							"doc": "No options."
-						},
-						"data": {
-							"doc": "No data."
-						},
-					}
-				]
-			}
-		]
-	}
+	
 	
 
 ## Doc
@@ -178,6 +48,36 @@ IMPORTANT! The pack file specification does not specify what named values an opt
 An 'data' value (any type allowed) may appear as a member of any object in a pack file, including at the top level. The purpose of the data object is to contain the data value(s) used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on pack file processing. Data values may be any valid JSON type, although the specific type and how it is are used is dependent both on the pack file processor and the context of the data object within the pack file.
 
 IMPORTANT! The pack file specification does not specify what named values a data object must or may contain. Please refer to the documentation for the pack file processor you will be using for more information.
+
+## Special Value Types
+
+Pack Files support some special value types that extend JSON to allow 
+
+### Expression Strings ($=)
+
+Pack Files support 'Expression Strings'. Any JSON string value starting with the characters '$=' is an Expression String and the entire contents of the string after those characters is considered to be a Javascript or other programming language expression, not as a standard JSON string value. How expression strings are interprested and evaluated is dependent on the Pack File Processor.
+
+Expression Strings can be used for any data value of any type, so long as the expression they contain returns the correct value type.
+
+WARNING: Expression Strings can result in runtime failures if they are invalid expressions for the runtime system. They may also introduce difficult to track down bugs since they are added to generated code as opposed to hand-written code. Use them carefully and keep these facts in mind.
+
+Examples:
+
+	"rotation": "$= Math.pi * 90"
+
+	"rotation": "$= SquidSpace.rotate180"
+
+	"position": "$= [16, MyMod.getFloaterHeight(), 35 * MyMod.backOffsetDefault]"
+
+	"data": "$= PrivateLoaderFunc('foo')"
+
+### Binary Strings ($#)
+
+Pack Files support 'Binary Strings' in Base64 format. Any JSON string value starting with the characters '$#' is a Binary String and the entire contents of the string after those characters must be Base64 data. SquidSpace itself does not translate Binary Strings from Base64, instead it expects the code it passes it to to know the data is in Base64 form and to handle it correctly. How binary strings are interprested converted is dependent on the Pack File Processor.
+
+WARNING: Binary Strings can result in runtime failures if they are not valid Base64 or if the data they contain is not the data or data type that was expected. Use them carefully and keep these facts in mind.
+
+TODO: Example
 
 ## Modules
 
@@ -254,6 +154,8 @@ IMPORTANT! The pack file specification does not detail configuration, options, a
 Each placement command consists of the following objects:
 
 1. "placer" – (string; required) – the placement algorithm to use
+
+1. "place-name" – (string; required) – A unique name within the Layout Area, used to identify all instances of this placement
 
 2. "doc" – (string; optional) – documentation for the placement command, use to describe what the placement is for 
 

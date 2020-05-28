@@ -14,9 +14,10 @@
 	be changed. For example, gravity can be increased or decreased;
 	affecting how far you can jump and how fast you move.
 
-	NOTE: This is a PoC version of the module and is intended only
-	      to support the Squid Hall project. Later versions may be
-	      very different than this one.
+	NOTE: SquidSpace is intentionally implemented as an old-style Javascript 
+	module, despite the fact it uses some newer Javascript functionality. 
+	This allows SquidSpace.js to be used from a file system without creating
+	requiring a server and side-steps CORS exceptions in general.
 
 	## Some ideas for improvement
 
@@ -35,70 +36,49 @@
     authors.
 */
 
+// Log levels.
+const SS_LOG_ALL = 0;
+const SS_LOG_DEBUG = 0;
+const SS_LOG_INFO = 1;
+const SS_LOG_WARN = 2;
+const SS_LOG_ERROR = 3;
+const SS_LOG_NONE = 9;
 
+// SquidSpace core.
 var SquidSpace = function() {
-
+	
 	//
-	// Defaults.
-	//
-
-
-	//
-	// Some size variables we need for calculations.
-	//
-	// NOTE: Each unit corresponds to 1 meter, so 1.75 is one and three quarter meters.
+	// Module data.
 	//
 
-	// Debug modes.
-	// TODO: Make debug modes dynamic, can turn on and off, and
-	// add a public log function with log levels, that logs 
-	// to the console based on log level and debug mode.
-	var debugCamera = false;
+	// TODO: Refactor to remove these.
+	var pnlwidth = 1;
+	var norot = 0; // Do not rotate.
+	var rot = Math.PI / 2; // Rotate 90 degrees.
+
+	var logLevel = SS_LOG_ERROR;
 
 	// This is the NW corner of the arena and the origin for layouts. 
 	var floorOriginNW = [0, 0, 0]; 
 	var floorSize = [0, 0];
 	
-	// TODO: Add a SquidSpace-specific config value and pass a copy of 
-	//       and pass it 'frozen' to all events and hooks.
-	// const temp3 = Object.freeze( {a:3,b:4})
-	// temp3.a = 2 // it wont update the value of a, it still have 3
-	// temp3.c = 6 // still valid but wont change the object
-
-	// TODO: Move these values into the pack file data.
-	var pnlwidth = 1;
-	var pnldepth = 0.005;
-	var pnlSpacing = pnlwidth + 0.3;
-	var tblwidth = 1.8;
-	var tbldepth = 0.75;
-	var tblheight = 0.05;
-	var tblSpacing = tblwidth + 0.02;
-	var bmWidth = 1;
-	var bmSpacing = bmWidth + 10;
-
-	// TODO: Determine if these belong in the pack file data.
-	var norot = 0; // Do not rotate.
-	var rot = Math.PI / 2; // Rotate 90 degrees.
-
-
-	//
-	// Module data.
-	//
-
-
 	var textures = {};
 	var materials = {};
 	var objects = {};
+	var lights = {};
 
-	var prepareHook = undefined;
-	var buildHook = undefined;
+	var logHook = function(message){console.log(message);};
+	var prepareHook = function(scene){self.logInfo("prepareHook()");};
+	var buildHook = function(scene){self.logInfo("buildHook()");};
 	var placerHooks = {};
 	
 	var eventHandlers = {};
 
+
 	//
 	// Helper functions.
 	//
+
 
 	var getValIfKeyInDict = function(key, dict, defaultVal) {
 		if ((dict != undefined) && (typeof dict === "object")) {
@@ -110,9 +90,11 @@ var SquidSpace = function() {
 		return defaultVal;
 	}
 
+
 	//
 	// Object spec loader.
 	//
+	
 	
 	var objectSpecLoader = function(objDict, scene, onSuccessFunc) {
 		for (key in objDict) {
@@ -157,8 +139,8 @@ var SquidSpace = function() {
 					}
 				}
 				else {
+					logError("Builtin without data section.")
 					// TODO: Throw Error.
-					Console.log("Builtin without data section.")
 				}
 			}
 			else {
@@ -189,6 +171,7 @@ var SquidSpace = function() {
 			}			
 		}
 	}
+	
 	
 	//
 	// Builtins.
@@ -276,6 +259,7 @@ var SquidSpace = function() {
 		camera.checkCollisions = true;
 		camera.applyGravity = true;
 
+		/* TODO: Remove and refactor.
 		// Other camera settings.
 		// TODO: Experiment with values to find best.
 		// TODO: Consider making pack file settable or even dynamically settable.
@@ -294,6 +278,7 @@ var SquidSpace = function() {
 			camera.angularSensibility = 750;
 			//camera.angularSensibility = 1000;
 		}
+		*/
 		
 		return camera;
 	}
@@ -315,8 +300,7 @@ var SquidSpace = function() {
 				config = layout["config"];
 			}
 
-			// DEBUG: Comment out for production.
-			console.log(`layoutSpecLoader: ${areaName}`);
+			SquidSpace.logDebug(`layoutSpecLoader: ${areaName}`);
 			
 			for (placement of layout["object-placements"]) {
 				let placeName =  getValIfKeyInDict("name", placement, "");
@@ -324,8 +308,7 @@ var SquidSpace = function() {
 				let objName = getValIfKeyInDict("object", placement, "");
 				let data = getValIfKeyInDict("data", placement, {});
 				
-				// DEBUG: Comment out for production.
-				console.log(`layoutSpecLoader placement: ${placeName}/${placer}/${objName}`);
+				SquidSpace.logDebug(`layoutSpecLoader placement: ${placeName}/${placer}/${objName}`);
 				
 				// Do we have a valid object name?
 				if (objName in objects || objName === "_none_") {
@@ -375,8 +358,7 @@ var SquidSpace = function() {
 							// TODO: Throw exception or otherwise handle. (Log?)
 	   					}
 						
-						// DEBUG: Comment out for production.
-						console.log(`layoutSpecLoader placer count: ${plc.length}`);
+						SquidSpace.logDebug(`layoutSpecLoader placer count: ${plc.length}`);
 						
 						if (plc.length > 0) {
 							SquidSpace.placeObjectInstances(objName, plc, undefined, scene);
@@ -495,7 +477,59 @@ var SquidSpace = function() {
 			);
 		},
 
-		// TODO: Texture/Material/Light management functions.
+		// TODO: Light management functions.
+
+		//
+		// Texture management functions.
+		//
+		// TODO: More.
+		//
+		
+		addTextureInstance: function(texName, texture) {		
+			// TODO: Check if texName already exists. Decide how to handle. (Error?)
+			
+			// Keep a local reference to the texture.
+			textures[texName] = texture;
+		},
+		
+		
+		/** Returns the texture for the passed texture name, assuming the texture was 
+		specified in the pack file, loaded with the loadTexture(),
+		or added with the addTextureInstance() function. If the texture is available it 
+		is returned. If it was not it returns 'undefined'. */
+		getTexture: function(texName) {
+			if (texName in textures) {
+				return textures[texName];
+			}
+			
+			return undefined;
+		},
+
+		//
+		// Material management functions.
+		//
+		// TODO: More.
+		//
+		
+		addMaterialInstance: function(matName, material) {		
+			// TODO: Check if matName already exists. Decide how to handle. (Error?)
+			
+			// Keep a local reference to the material.
+			materials[matName] = material;
+		},
+		
+		
+		/** Returns the material for the passed material name, assuming the material was 
+		specified in the pack file, loaded with the loadMaterial(),
+		or added with the addMaterialInstance() function. If the texture is available it 
+		is returned. If it was not it returns 'undefined'. */
+		getMaterial: function(matName) {
+			if (matName in materials) {
+				return materials[matName];
+			}
+			
+			return undefined;
+		},
 
 		//
 		// Object management functions.
@@ -540,8 +574,9 @@ var SquidSpace = function() {
 
 			obj = BABYLON.SceneLoader.ImportMesh(meshNameFilter, fr, fn, scene, 
 					function(newMeshes) {
-						if (debugVerbose) console.log("'" + objName + 
-							"' mesh import suceeded. Mesh count: " + newMeshes.length);
+						// TODO: Refactor.
+						//if (debugVerbose) logDebug("'" + objName + 
+						//	"' mesh import suceeded. Mesh count: " + newMeshes.length);
 						
 						// Save the meshes for later.
 						SquidSpace.addObjectInstance(objName, newMeshes);
@@ -549,7 +584,7 @@ var SquidSpace = function() {
 						if (typeof onSuccessFunc == "function") onSuccessFunc(newMeshes);
 					}, null,
 					function(scene, message, exception) {
-						console.log("== '" + objName + 
+						logDebug("== '" + objName + 
 							"' mesh import failed. ==\n  Message: " + 
 							message.substring(0, 64) + " ... " +  message.substring(message.length - 64) +
 							"\n  Exception: " + exception);
@@ -735,13 +770,71 @@ var SquidSpace = function() {
 
 
 		//
+		// Logging.
+		//
+		
+		/** Sets the current log level to the passed level, if valid. */
+		setLogLevel: function(logLevel) {
+			// Is it a valid log level?
+			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLevel)) {
+				// Set the log level.
+				logLevel = logLevel;
+				logDebug(`Setting log level: ${logLevel}`);
+			}
+			else {
+				logError(`Invalid log level: ${logLevel} - could not set`);
+				// TODO: Throw exception?
+			}
+		},
+		
+		/** Logs a debug-level message. */
+		logDebug: function(message) {
+			if (logLevel <= SS_LOG_DEBUG) {
+				logHook("[DEBUG] " + message)
+			}
+		},
+		
+		/** Logs an info-level message. */
+		logInfo: function(message) {
+			if (logLevel <= SS_LOG_INFO) {
+				logHook("[INFO] " + message)
+			}
+		},
+		
+		/** Logs a warning-level message. */
+		logWarn: function(message) {
+			if (logLevel <= SS_LOG_WARN) {
+				logHook("[WARNING] " + message)
+			}
+		},
+		
+		/** Logs an error-level message. */
+		logError: function(message) {
+			if (logLevel <= SS_LOG_ERROR) {
+				logHook("[ERROR] " + message)
+			}
+		},
+				
+		//
 		// Hooks.
 		//
 		
+	 	/** The logHook is called by the SquidSpace.js logging functions to output 
+			a formatted message to a logging service. The default implmentation
+			uses console.log(), but you can attach a hook function to override that and 
+			do something different; including sending log output to a server for 
+			remote debugging.
 		
-	 	/** The prepareHook is called at the end of prepareWorld() processing
-		    to add builtin 3D content or do other things to the scene in 
-		    preparation for building the world.
+		    Signature: hookFunction(message)
+		 */
+		attachLogHook: function(hookFunction) {
+			let oldHook = logHook;
+			logHook = hookFunction;
+			return oldHook;
+		},
+		
+	 	/** The prepareHook is called before buildWorld() processing to add builtins or do 
+			other things to the scene in preparation for building the world.
 		
 		    Signature: hookFunction(scene)
 		 */
@@ -751,9 +844,9 @@ var SquidSpace = function() {
 			return oldHook;
 		},
 		
-	 	/** The prepareHook is called at the end of buildWorld() processing
-		    to add extra 3D content, attach events or do other things to the scene in 
-		    preparation for running the world.
+	 	/** The BuildHook is called after buildWorld() processing to add extra 3D 
+			content, attach non-SquidSpace.js events outside or do other things to the 
+			scene in preparation for running the world.
 		
 		    Signature: hookFunction(scene)
 		 */
@@ -824,7 +917,18 @@ var SquidSpace = function() {
 		},
 		
 		
-		// TODO: Remove event handler.
+		removeEventHandler: function(eventName, handlerFunc) {
+			if (!(eventName in eventHandlers)) {
+				// No event handlers! Bail now.
+				return;
+			}
+			
+			// Find the handler function in the array and remove it.
+			let idx = eventHandlers[eventName].indexOf(handlerFunc);
+			if (idx >=0) {
+				eventHandlers.splice(idx, 1);
+			}
+		},
 		
 		
 		//
@@ -832,17 +936,23 @@ var SquidSpace = function() {
 		//
 		
 		
-		/** PoC-specific function to add Babylon.js built-ins and do other setup. */
-		prepareWorld: function(scene, debugVerbose, debugLayer) {
-			
+		/** PoC-specific function to load the passed scene from the world 
+		    and content specs. 
+		*/
+		buildWorld: function(worldSpec, contentSpecs, scene) {
+			// Assume success.
+			let success = true;
+		 
+		 	/* TODO: Remove and refactor.
 			if (debugVerbose) {
 				// TODO: Improve debug handling.
 				// TODO: Either make this optional or move it to a hook.
 				// Log plugin activations.
 				BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
-				    console.log(`Plugin Activated: ${plugin.name}`);
+				    logDebug(`Plugin Activated: ${plugin.name}`);
 				});
 			}
+			*/
 		
 			// Turn on optimizaton.
 			// TODO: Either make these optional or move them to a hook.
@@ -856,72 +966,44 @@ var SquidSpace = function() {
 			options.addOptimization(new BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed());
 			var optimizer = new BABYLON.SceneOptimizer(scene, options);
 			optimizer.targetFrameRate = 40 // TODO: Come up with a way to make this user settable.
+
+		 	/* TODO: Remove and refactor.
 			if (debugVerbose) {
-				console.log(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
+				logDebug(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
 				optimizer.onSuccessObservable = new function() {
-					console.log("Optimizer 'success'.")
+					logDebug("Optimizer 'success'.")
 				}
 				optimizer.onNewOptimizationAppliedObservable = new function() {
-					console.log("New optimization applied.")
+					logDebug("New optimization applied.")
 				}
 				optimizer.onFailureObservable = new function() {
-					console.log(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
+					logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
 				}
 			}
+			*/
 			//optimizer.start(); // Don't need?
 
+		 	/* TODO: Remove and refactor.
 			// TODO: Make this dynamic somehow.
 			// TODO: Either make this optional or move it to a hook.
 			if (debugLayer) scene.debugLayer.show();
+			*/
 			
 		
-			// Add some procedural materials  we'll be using as 'builtins' to the scene.
-			// TODO: Add texture and material code to SquidSpace and either move these to 
-			//       squidhall.js or to a pack file.
-			// TODO: Determine if we want to use ambient or diffuse textures. Currently using
-			//       ambient on marble and diffuse on macadam. See:
-			// * https://gamedev.stackexchange.com/questions/14334/the-difference-between-diffuse-texture-and-ambient-occlusion-texture
-			// * https://www.quora.com/What-is-the-difference-between-Ambient-Diffuse-and-Specular-Light-in-OpenGL-Figures-for-illustration-are-encouraged?share=1
-		    materials.macadam = new BABYLON.StandardMaterial("macadam", scene);
-		    textures.macadam = new BABYLON.RoadProceduralTexture("macadamtext", 2048, scene);
-			materials.macadam.backFaceCulling = false;
-		    materials.macadam.diffuseTexture = textures.macadam;
-		    materials.marble = new BABYLON.StandardMaterial("marble", scene);
-		    textures.marble = new BABYLON.MarbleProceduralTexture("marbletext", 512, scene);
-		    materials.marble.ambientTexture = textures.marble;
-		    //materials.marble.numberOfBricksHeight = 1; // Doesn't seem to do anything?
-		    //materials.marble.numberOfBricksWidth = 1; // Doesn't seem to do anything?
-		    materials.wood = new BABYLON.StandardMaterial("wood", scene);
-		    textures.wood = new BABYLON.WoodProceduralTexture("woodtext", 1048, scene);
-			textures.wood.ampScale = 256; // TODO: Experiment with this, read docs again.
-			textures.wood.woodColor = new BABYLON.Color3(0.8, 0.8, 0.8);
-			materials.wood.backFaceCulling = false;
-		    materials.wood.diffuseTexture = textures.wood;
-			
 			// Call prepare hook.
 			// TODO: try/catch.
 			prepareHook(scene);
-		},
-	
-		/** PoC-specific function to load the passed scene from the world 
-		    and content specs. 
-		*/
-		buildWorld: function(worldSpec, contentSpecs, scene, debugVerbose) {
-			// Assume success.
-			let success = true;
-		 
+			
+			/* TODO: Remove this.
 			debugCamera = debugVerbose;
 			if (debugVerbose) {
 				//showWorldAxis(10)
 			}
+			*/
 		 
 			// Verify inputs.
 			// TODO: Add other validation checks, such as object
 			//       member validation.
-			if (typeof debugVerbose === "undefined") {
-				// Default to true.
-				debugVerbose = false;
-			}
 			if (typeof worldSpec != "object") {
 				// World spec is required.
 				success = false;
@@ -953,6 +1035,8 @@ var SquidSpace = function() {
 			// Set gravity for the scene (G force on Y-axis)
 			// See https://doc.babylonjs.com/babylon101/cameras,_mesh_collisions_and_gravity
 			// TODO: Determine best settings here.
+			
+		 	/* TODO: Remove and refactor.
 			if (debugVerbose) {
 				// TODO: Give this it's own argument instead of debugVerbose.
 				// Allow user to fly.
@@ -963,6 +1047,10 @@ var SquidSpace = function() {
 				// TODO: Configure from pack file?
 				scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
 			}
+			*/
+			// User walks on ground.
+			// TODO: Configure from pack file?
+			scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
 
 			// Enable Collisions for scene.
 			scene.collisionsEnabled = true;
