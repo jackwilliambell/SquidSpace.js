@@ -12,41 +12,90 @@ import json
 from enum import Enum
 
 
-class ElementAction(Enum):
-    """Enumeration of supported pack actions."""
+class ResourceFlavor(Enum):
+    """Enumeration of supported resource types."""
+    TEXTURE = 0
+    MATERIAL = 1
+    OBJECT = 2
+    MOD = 3
+    
+class ResourceAction(Enum):
+    """Enumeration of supported resource pack-options actions."""
+    NONE = 0
     INSERT = 1
     LINK = 2
-    BUILTIN = 3
-
-
-class ElementSource(Enum):
-    """Enumeration of supported pack sources."""
-    DATA = 1
-    FILE = 2
-    FILE_AND_ROOT = 3
-    EMPTY = 99
     
     
 class ModuleConfiguration(object):
     """Contains a module configuration."""
-    def __init__(self, configData):
+    def __init__(self, worldConfigData, fileConfigData, moduleConfigData):
         """Sets the module configuration to match the passed configuration data."""
-        # Set defaults
-        self.pp = True; # TODO: Add 'pretty-print' to config.
-        self.offset = "   " # TODO: Add 'offset' to config as number of chars.
-        self.defaultFileLoader = "TODO: loader functions not currently supported." # TODO
-        self.defaultUrlLoader = "TODO: loader functions not currently supported." # TODO
         
-        # Get values from passed configuration, if any.
-        if not configData is None and isinstance(configData, dict):
-            if "pretty-print" in configData:
-                self.pp = configData["pretty-print"]
-            if "pretty-offset" in configData:
-                self.offset = " " * configData["pretty-offset"]
-            if "default-file-loader-func" in configData:
-                self.defaultFileLoader = configData["default-file-loader-func"]
-            if "default-url-loader-func" in configData:
-                self.defaultUrlLoader = configData["default-url-loader-func"]
+        # Start by setting defaults
+        self.pp = True; 
+        self.offset = " " * 3 # Default to three spaces.
+        self.outDir = "build/"
+        self.texDir = "assets/textures/"
+        self.matDir = "assets/materials/"
+        self.objDir = "assets/objects/"
+        self.modDir = "assets/mods/"
+        
+        # TODO: make sure the 'dir' values are proper paths with a trailing slash and/or
+        # use Python dir functions to generate full path. 
+        
+        # Override with values from passed world configuration, if any.
+        if not worldConfigData is None and isinstance(worldConfigData, dict):
+            if "pretty-print" in worldConfigData:
+                self.pp = worldConfigData["pretty-print"]
+            if "pretty-offset" in worldConfigData:
+                # TODO: Verify "pretty-offset" is an integer.
+                self.offset = " " * worldConfigData["pretty-offset"]
+            if "out-dir" in worldConfigData:
+                self.outDir = worldConfigData["out-dir"]
+            if "texture-dir" in worldConfigData:
+                self.texDir = worldConfigData["texture-dir"]
+            if "material-dir" in worldConfigData:
+                self.matDir = worldConfigData["material-dir"]
+            if "object-dir" in worldConfigData:
+                self.objDir = worldConfigData["object-dir"]
+            if "mod-dir" in worldConfigData:
+                self.modDir = worldConfigData["mod-dir"]   
+        
+        # Override with values from passed file configuration, if any.
+        if not fileConfigData is None and isinstance(fileConfigData, dict):
+            if "pretty-print" in fileConfigData:
+                self.pp = fileConfigData["pretty-print"]
+            if "pretty-offset" in fileConfigData:
+                # TODO: Verify "pretty-offset" is an integer.
+                self.offset = " " * fileConfigData["pretty-offset"]
+            if "out-dir" in fileConfigData:
+                self.outDir = fileConfigData["out-dir"]
+            if "texture-dir" in fileConfigData:
+                self.texDir = fileConfigData["texture-dir"]
+            if "material-dir" in fileConfigData:
+                self.matDir = fileConfigData["material-dir"]
+            if "object-dir" in fileConfigData:
+                self.objDir = fileConfigData["object-dir"]
+            if "mod-dir" in fileConfigData:
+                self.modDir = fileConfigData["mod-dir"]   
+                         
+        # Override with values from passed module configuration, if any.
+        if not moduleConfigData is None and isinstance(moduleConfigData, dict):
+            if "pretty-print" in moduleConfigData:
+                self.pp = moduleConfigData["pretty-print"]
+            if "pretty-offset" in moduleConfigData:
+                # TODO: Verify "pretty-offset" is an integer.
+                self.offset = " " * moduleConfigData["pretty-offset"]
+            if "out-dir" in moduleConfigData:
+                self.outDir = moduleConfigData["out-dir"]
+            if "texture-dir" in moduleConfigData:
+                self.texDir = moduleConfigData["texture-dir"]
+            if "material-dir" in moduleConfigData:
+                self.matDir = moduleConfigData["material-dir"]
+            if "object-dir" in moduleConfigData:
+                self.objDir = moduleConfigData["object-dir"]
+            if "mod-dir" in moduleConfigData:
+                self.modDir = moduleConfigData["mod-dir"]            
 
 
 ## TODO: insertBinary() and insertBinaryFile(), doing some kind of binary-to-text conversion.
@@ -73,12 +122,12 @@ def insertText(text, outFile, singleLine = True):
         outFile.write(text.replace('"', '\\"'))
 
     
-def insertReturnLinkLoaderFunc(func, link, outFile, config, singleLine = True):
+def insertReturnLinkLoaderFunc(func, link, outFile, modConfig, singleLine = True):
     """ TODO """
     pass
 
 
-def insertValue(value, outFile, config, baseOffset, singleLine = True):
+def insertValue(value, outFile, modConfig, baseOffset, singleLine = True):
     """Inserts a value into the out file."""
     
     if isinstance(value, str): # String
@@ -93,12 +142,12 @@ def insertValue(value, outFile, config, baseOffset, singleLine = True):
     elif isinstance(value, (int, float)): # Float
         outFile.write(str(value))
     elif isinstance(value, dict): # Dictionary
-        insertDict(value, outFile, config, baseOffset + config.offset)
+        insertDict(value, outFile, modConfig, baseOffset + modConfig.offset)
     elif isinstance(value, list): # List
-        insertList(value, outFile, config, baseOffset + config.offset)
+        insertList(value, outFile, modConfig, baseOffset + modConfig.offset)
     
 
-def insertList(list, outFile, config, baseOffset):
+def insertList(list, outFile, modConfig, baseOffset):
     """Insertes the contents of a list into the out file."""
 
     outFile.write("[")
@@ -109,14 +158,14 @@ def insertList(list, outFile, config, baseOffset):
             outFile.write(",")
         else:
             ft = True
-        if config.pp: outFile.write("\n" + baseOffset + config.offset)
-        insertValue(value, outFile, config, baseOffset, singleLine = True)
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
+        insertValue(value, outFile, modConfig, baseOffset, singleLine = True)
 
-    if config.pp: outFile.write("\n" + baseOffset)
+    if modConfig.pp: outFile.write("\n" + baseOffset)
     outFile.write("]")
     
 
-def insertDict(dict, outFile, config, baseOffset):
+def insertDict(dict, outFile, modConfig, baseOffset):
     """Insertes the contents of a dictionary into a Module file."""
 
     outFile.write("{")
@@ -127,100 +176,121 @@ def insertDict(dict, outFile, config, baseOffset):
             outFile.write(",")
         else:
             ft = True
-        if config.pp: outFile.write("\n" + baseOffset + config.offset)
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
         outFile.write('"' + key + '": ')
-        insertValue(dict[key], outFile, config, baseOffset, singleLine = True)
+        insertValue(dict[key], outFile, modConfig, baseOffset, singleLine = True)
 
-    if config.pp: outFile.write("\n" + baseOffset)
+    if modConfig.pp: outFile.write("\n" + baseOffset)
     outFile.write("}")
     
         
-def insertLoaderData(elem, outFile, config, baseOffset):
-    """Inserts a function that fetches an element into the out file, where 
-    the element returned is a dictionary consisting of the element data and configuration."""
+def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
+    """Adds values based on the passed in resource values and the resource flavor; 
+    handles data inserts if required."""
     
-    # Determine action requested.
-    action = ElementAction.INSERT
-    if "action" in elem:
-        if elem["action"].lower() == "link":
-            action = ElementAction.LINK
-        elif elem["action"].lower() == "insert":
-            action = ElementAction.INSERT
-        elif elem["action"].lower() == "builtin":
-            action = ElementAction.BUILTIN
-        else:
-            raise ValueError("Invalid 'action' value: " + elem["action"])
-    else:
-        raise ValueError("Action element required.")
-            
-    # Determine element source, based on the action.
-    source = ElementSource.EMPTY
-    if action == ElementAction.INSERT:
-        if "data" in elem and not "file" in elem and not "root" in elem:
-            source = ElementSource.DATA
-        elif "file" in elem and not "data" in elem and not "root" in elem:
-            source = ElementSource.FILE
-        else:
-            raise ValueError("Action 'insert' requires one of 'file' or 'data' element.")
-    elif action == ElementAction.LINK:
-        if "file" in elem and "root" in elem and not "data" in elem:
-            source = ElementSource.FILE_AND_ROOT
-        else:
-            raise ValueError("Action 'link' requires one each of 'root' and 'file' element.")
-    elif action == ElementAction.BUILTIN:
-        if "data" in elem and not "file" in elem and not "root" in elem:
-            source = ElementSource.DATA
-        else:
-            raise ValueError("Action 'builtin' requires one of 'data' element.")
+    # Get resource values.
+    name = None # Default.
+    if "name" in elem:
+        name = elem["name"]
+    config = None # Default.
+    if "config" in elem:
+        config = elem["config"]
+    options = {} # Default is empty dict.
+    if "options" in elem:
+        options = elem["options"]
+    data = None # Default.
+    if "data" in elem:
+        data = elem["data"]
+        
+    # Validate resource values.
+    if not isinstance(name, str) and name != "":
+        raise ValueError("Resource name is required.")
+    if config != None and not isinstance(config, dict):
+        raise ValueError("Resource config must be a JSON object or not provided.")
+    if options != None and not isinstance(options, dict):
+        raise ValueError("Resource options must be a JSON object or not provided.")
     
-    if source == ElementSource.EMPTY:
-        raise ValueError("No valid source element supplied.")
+    # Get the data source values.
+    urlVal = None
+    if config != None and "url" in config:
+        urlVal = config["url"]
+    fileNameVal = None
+    if config != None and "file-name" in config:
+        fileNameVal = config["file-name"]
+    dirVal = None
+    if config != None and "dir" in config: 
+        dirVal = config["dir"]
+    elif resourceFlavor == ResourceFlavor.TEXTURE:
+        dirVal = modConfig.texDir
+    elif resourceFlavor == ResourceFlavor.MATERIAL:
+        dirVal = modConfig.matDir
+    elif resourceFlavor == ResourceFlavor.OBJECT:
+        dirVal = modConfig.objDir
+    elif resourceFlavor == ResourceFlavor.MOD:
+        dirVal = modConfig.modDir
+                
+    # Determine pack action requested.
+    action = ResourceAction.NONE
+    if config != None and "pack-options" in config:
+        popts = config["pack-options"]
+        if popts["action"].lower() == "link":
+            action = ResourceAction.LINK
+        elif popts["action"].lower() == "insert":
+            action = ResourceAction.INSERT
+        elif popts["action"].lower() == "none":
+            action = ResourceAction.NONE
+        else:
+            raise ValueError("Invalid Resource 'action' value: " + popts["action"])
+    
+    # Validate pack action and data source values.
+    if not isinstance(dirVal, str):
+        raise ValueError("Invalid 'dir' value.")
+    if urlVal != None and fileNameVal != None:
+        raise ValueError("Cannot specify both file name and URL.")
+    if action == ResourceAction.NONE and (urlVal != None or fileNameVal != None):
+        raise ValueError("File name and URL not allowed if resource action is 'none'.")
+    if action == ResourceAction.LINK and urlVal == None and fileNameVal == None:
+        raise ValueError("File name or URL required if resource action is 'link'.")
+    if action == ResourceAction.INSERT and urlVal == None and fileNameVal == None:
+        raise ValueError("File name or URL required if resource action is 'insert'.")
     
     # Write the prefix
-    if config.pp: outFile.write("\n" + baseOffset)
-    outFile.write(elem["name"] + ": {") 
+    if modConfig.pp: outFile.write("\n" + baseOffset)
+    outFile.write(name + ": {") 
 
-    # Write data.
-    if config.pp: outFile.write("\n" + baseOffset + config.offset + config.offset)
-    if (action == ElementAction.BUILTIN):
-        outFile.write("\"builtin\": true,")
-        if config.pp: outFile.write("\n" + baseOffset + config.offset + config.offset)
-    
-    if source == ElementSource.DATA:
-        outFile.write("\"data\": ")
-        if isinstance(elem["data"], str):
-            outFile.write("\"")
-            insertText(elem["data"], outFile, singleLine)
-            outFile.write("\"")
-        elif isinstance(elem["data"], dict):
-            insertDict(elem["data"], outFile, config, baseOffset + config.offset + config.offset)
-        else:
-            raise ValueError("Data element must be a string for 'insert' actions or a dictionary for 'buitin' actions.")
-    elif source == ElementSource.FILE:
-        outFile.write("\"data\": \"")
-        insertTextFile(elem["file"], outFile, singleLine = True)
-        outFile.write("\"")
-    elif source == ElementSource.FILE_AND_ROOT:
-        outFile.write("\"root\": \"")
-        insertText(elem["root"], outFile, singleLine = True)
-        outFile.write("\"",)
-        if config.pp: outFile.write("\n" + baseOffset + config.offset + config.offset)
-        outFile.write("\"file\": \"")
-        insertText(elem["file"], outFile, singleLine = True)
-        outFile.write("\"")
-    else:
-        raise ValueError("Invalid source.")
-                    
-    # Write elem config, if present.
-    if "config" in elem:
+    # Write options, if present.
+    if options != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"options": ')
+        insertDict(options, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
         outFile.write(",")
-        if config.pp: outFile.write("\n" + baseOffset + config.offset + config.offset)
-        outFile.write('"config": ')
-        insertDict(elem["config"], outFile, config, baseOffset + config.offset + config.offset)
-        
+
+    # Write data based on the action and the source.
+    if action == ResourceAction.NONE and data != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"data": ')
+        insertValue(data, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+    elif action == ResourceAction.LINK and urlVal != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"data": ')
+        insertText(urlVal, outFile)
+    elif action == ResourceAction.LINK and fileNameVal != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"data": ')
+        insertDict({"dir": dirVal, "file-name": fileNameVal}, outFile, 
+                    modConfig, baseOffset + modConfig.offset + modConfig.offset)
+    elif action == ResourceAction.INSERT and urlVal != None:
+        # TODO: Implement.
+        raise NotImplementedError("At this time 'insert' actions with 'url' sources are not supported.")
+    elif action == ResourceAction.INSERT and fileNameVal != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"data": ')
+        insertTextFile(dirVal + fileNameVal, outFile, singleLine = True)
+            
     # Write the suffix. 
-    if config.pp: outFile.write("\n" + baseOffset)
+    if modConfig.pp: outFile.write("\n" + baseOffset)
     outFile.write("},") 
+    
     
 def insertLayoutData(elem, outFile, config, baseOffset):
     # TODO: Implement something more specific. 
@@ -228,7 +298,7 @@ def insertLayoutData(elem, outFile, config, baseOffset):
     outFile.write(",")
     
     
-def processModule(outDir, module):
+def processModule(worldConfig, fileConfig, module):
     """Processes one module's elements and generates a module file."""
     
     # TODO: Improve error handling. Need to decide if we wrap everything in a try-catch or
@@ -237,82 +307,92 @@ def processModule(outDir, module):
     # DEBUG: Comment out for production.
     #print(module);print("")
     print("Writing module: " + module["name"]);print("")
-
-    # Get configuration and set up for processing.     
-    config = ModuleConfiguration(module["config"])
-    offset = config.offset
     
-    # TODO: make sure outdir is a proper path with a trailing slash and/or
-    # use Python dir functions to generate full module path. Note that outdir
-    # may be passed in as None, meaning use local dir.
+    # Get module configuration.
+    moduleConfig = {} # Default config is empty dict.
+    if "config" in module:
+        moduleConfig = module["config"]
+        
+    # Create the module processing configuration.
+    modConfig = ModuleConfiguration(worldConfig, fileConfig, moduleConfig)
     
     # Open module output file.
-    mf = open(outDir + module["name"] + ".js", "w")
+    mf = open(modConfig.outDir + module["name"] + ".js", "w")
     
     # Write module start.
     mf.write("var " + module["name"] + " = (function(){")
-    if config.pp: mf.write("\n")
+    if modConfig.pp: mf.write("\n")
         
     # Write module publics.
-    if config.pp: mf.write("\n" + offset)
+    if modConfig.pp: mf.write("\n" + modConfig.offset)
     mf.write("return {")
     
-    baseOffset = offset + offset
+    baseOffset = modConfig.offset + modConfig.offset
     
-    # Process objects.
-    if "objects" in module:
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("objects: {")
-        for obj in module["objects"]:
-            insertLoaderData(obj, mf, config, baseOffset + offset)
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("},")
+    # Process resouces.
+    if "resources" in module:
+        resources = module["resources"]
         
-    # Process textures.
-    if "textures" in module:
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("textures: {")
-        for texture in module["textures"]:
-            insertLoaderData(texture, mf, config, baseOffset + offset)
-        mf.write("},")
+        # Process texture resouces.
+        if "textures" in module:
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("textures: {")
+            for texture in resources["textures"]:
+                insertResourceData(ResourceFlavor.TEXTURE, texture, mf, modConfig, 
+                                    baseOffset + modConfig.offset)
+            mf.write("},")
             
-    # Process materials.
-    if "materials" in module:
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("materials: {")
-        for material in module["materials"]:
-            insertLoaderData(material, mf, config, baseOffset + offset)
-        mf.write("},")
-            
-    # Process lights.
-    if "lights" in module:
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("lights: {")
-        for light in module["lights"]:
-            insertLoaderData(light, mf, config, baseOffset + offset)
-        mf.write("},")
+        # Process material resouces.
+        if "materials" in module:
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("materials: {")
+            for material in resources["materials"]:
+                insertResourceData(ResourceFlavor.MATERIAL, material, mf, 
+                                    modConfig, baseOffset + modConfig.offset)
+            mf.write("},")
+    
+        # Process object resouces.
+        if "objects" in resources:
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("objects: {")
+            for obj in resources["objects"]:
+                insertResourceData(ResourceFlavor.OBJECT, obj, mf, modConfig, 
+                                    baseOffset + modConfig.offset)
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("},")
+        
+        # Process mod resouces.
+        if "mods" in resources:
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("mods: {")
+            for mod in resources["mods"]:
+                insertResourceData(ResourceFlavor.MOD, mod, mf, modConfig, 
+                                    baseOffset + modConfig.offset)
+            if modConfig.pp: mf.write("\n" + baseOffset)
+            mf.write("},")
     
     # Process layouts.
-    if "area-layouts" in module:
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("layouts: [")
-        for layout in module["area-layouts"]:
-            if config.pp: mf.write("\n" + baseOffset + offset)
-            insertLayoutData(layout, mf, config, baseOffset + offset)
-        if config.pp: mf.write("\n" + baseOffset)
-        mf.write("]")
+    # TODO: Fix and uncomment.
+    #if "layouts" in module:
+    #    if modConfig.pp: mf.write("\n" + baseOffset)
+    #    mf.write("layouts: {")
+    #    for layout in module["layouts"]:
+    #        if modConfig.pp: mf.write("\n" + baseOffset + offset)
+    #        insertLayoutData(layout, mf, config, baseOffset + modConfig.offset)
+    #    if modConfig.pp: mf.write("\n" + baseOffset)
+    #    mf.write("}")
     
     # Write module end.
-    if config.pp: mf.write("\n" + offset)
+    if modConfig.pp: mf.write("\n" + modConfig.offset)
     mf.write("};")
-    if config.pp: mf.write("\n")
+    if modConfig.pp: mf.write("\n")
     mf.write("})();")
     
     # Clean up.
     mf.close()
     
     
-def processPackData(packData):
+def processPackData(worldConfig, packData):
     """Processes the Pack Data to generate module files."""
     # TODO: Document pack data.
     
@@ -320,24 +400,21 @@ def processPackData(packData):
     print("Processing Pack Data.");print("")
     #print(packData);print("")
     
-    # Get configuration and set up for processing.
-    outDir = None
+    # Get file configuration and set up for processing.
+    fileConfig = {} # Default config is empty dict.
     if "config" in packData:
-        config = packData["config"]
-        
-        if "outdir" in config and not config["outdir"] == "":
-            outDir = config["outdir"]
-    
+        fileConfig = packData["config"]
+            
     # Write Modules.
     if "modules" in packData:
         for module in packData["modules"]:
-            processModule(outDir, module)
+            processModule(worldConfig, fileConfig, module)
 
     # DEBUG: Comment out for production.
     print("Processing complete.");print("")
 
 
-def processPackString(packString):
+def processPackString(worldConfig, packString):
     """Loads JSON Pack Data from a string and processes it."""
 
     # Assume failure.
@@ -350,10 +427,10 @@ def processPackString(packString):
         print("Could not load pack string.")
         
     if not packData is None:    
-        processPackData(packData)
+        processPackData(worldConfig, packData)
 
 
-def processPackFile(packFile):
+def processPackFile(worldConfig, packFile):
     """Loads JSON Pack Data from a file and processes it."""
         
     # Assume failure.
@@ -366,12 +443,15 @@ def processPackFile(packFile):
         print("Error loading pack file:", sys.exc_info()[1])
         
     if not packData is None:    
-        processPackData(packData)
+        processPackData(worldConfig, packData)
 
 
 def main(packFileName):
     # Assume Failure.
     packFile = None
+    
+    # TODO: Get world config when loading.
+    worldConfig = {}
     
     if not packFileName is None and not packFileName == "":
         # Use passed packFile name.
@@ -386,10 +466,10 @@ def main(packFileName):
         packFile = sys.stdin
 
     if not packFile is None:    
-        processPackFile(packFile)
+        processPackFile(worldConfig, packFile)
     
     
 if __name__ == '__main__':
     # TODO: Support command line arguments for pack file name(s).
     main("squidhall.pack.json")
-    main("furniture.pack.json")
+    #main("furniture.pack.json")

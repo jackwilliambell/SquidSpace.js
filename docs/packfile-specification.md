@@ -6,19 +6,19 @@ Pack files are processed by reading them in and using them to generate some outp
 
 Although designed for use by the SquidSpace.js library and toolset, Pack Files are generalized and could be used as inputs for other 3D applications. (See also, Pack Files as a DSL below.)
 
-IMPORTANT! This specification is for the basic structure of a pack file and does not include any specific features of SquidSpace.js. For details on how pack files are used in SquidSpace.js, see the (SquidSpace.js tools documentation)[squidspace_tools.md].
+IMPORTANT! This specification is for the basic structure of a pack file and does not include any specific features of SquidSpace.js. For details on how pack files are used in SquidSpace.js, see the [SquidSpace.js packfiles documentation](squidspace-packfiles.md) and the [SquidSpace.js tools documentation](squidspace-tools.md).
 
 A Pack File consists of JSON data containing one or more of the following named top-level objects, although a specific pack file processor may add others:
 
-1. "doc" – (string; optional) – documentation for the entire file, use to describe what the file is for 
+1. "doc" – [string; optional] – documentation for the entire file, use to describe what the file is for 
 
-2. "config" – (object; optional, but may be required or ignored by some pack file processors) – global configuration details for the entire file (See also, Configuation below)
+2. "config" – [object; optional, but may be required or ignored by some pack file processors] – global configuration details for the entire file (See also, Configuation below)
 
-3. "options" – (object; optional, but may be required or ignored by some pack file processors) – global options for the entire file (See also, Options below)
+3. "options" – [object; optional, but may be required or ignored by some pack file processors] – global options for the entire file (See also, Options below)
 
-4. "data" – (any type; optional, but may be required or ignored by some pack file processors) – global data for the entire file (See also, Data below)
+4. "data" – [any type; optional, but may be required or ignored by some pack file processors] – global data for the entire file (See also, Data below)
 	 
-5. "modules" – (array; optional, but may be required or ignored by some pack file processors) – a specification for each module to be generated (see also, Modules below)
+5. "modules" – [array; optional, but may be required or ignored by some pack file processors] – a specification for each module to be generated (see also, Modules below)
 
 Pack File example:
 
@@ -83,21 +83,21 @@ TODO: Example
 
 The module section of a pack file is an array of one or more modules to process. Each module item consists of a specification for a single module. A module specification consists of JSON data containing the following named objects, although a specific pack file processor may add others:
 
-1. "name" – (string; required) – the name of the module, should be unique within the module array 
+1. "name" – [string; required] – the name of the module, should be unique within the module array 
 
-2. "doc" – (string; optional) – documentation for the module, use to describe what the module is for 
+2. "doc" – [string; optional] – documentation for the module, use to describe what the module is for 
 
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – module-wide configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some pack file processors] – module-wide configuration (See also, Configuation above)
 
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – module-wide options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some pack file processors] – module-wide options (See also, Options above)
 
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – module-wide data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – module-wide data (See also, Data above)
 	 
-6. "resources" – (object; optional, but may be required or ignored by some pack file processors) – a specification for all the resources in the module (see also, Resources below)
+6. "resources" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the resources in the module (see also, Resources below)
 	 
-7. "layouts" – (object; optional, but may be required or ignored by some pack file processors) – a specification for all the layouts in the module (see also, Layouts below)
+7. "layouts" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the layouts in the module (see also, Layouts below)
 	 
-8. "wiring" – (object; optional, but may be required or ignored by some pack file processors) – a specification for all the wiring in the module (see also, Wiring below)
+8. "wiring" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the wiring in the module (see also, Wiring below)
 
 ### Module Resources
 
@@ -107,15 +107,15 @@ To re-state this more clearly: a 'resources' object contains named 'resource typ
  
 Each resource item consists of a specification for a single resource to be processed by the pack file processor. A resource item specification consists of the following named objects, although a specific pack file processor may add others:
 
-1. "name" – (string; required) – the name of the resource, should be unique within the resource type array 
+1. "name" – [string; required] – the name of the resource, should be unique within the resource type array 
 
-2. "doc" – (string; optional) – documentation for the resource item, use to describe what the resource is for 
+2. "doc" – [string; optional] – documentation for the resource item, use to describe what the resource is for 
 
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – resource-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some pack file processors] – resource-specific configuration (See also, Configuation above)
 
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – resource-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some pack file processors] – resource-specific options (See also, Options above)
 
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – resource-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – resource-specific data (See also, Data above)
 
 IMPORTANT! The pack file specification does not detail configuration, options, and data values for resource items. Please refer to the documentation for the pack file processor you will be using for more information.
 
@@ -123,65 +123,49 @@ IMPORTANT! The pack file specification does not detail configuration, options, a
 
 The layouts section of a module is an array containing one or more 'layout areas' to include in the output. There can be zero or more layout areas. Layout areas specify an area and contain a layout specification for the objects in that area. A layout area consists of the following named objects, although a specific pack file processor may add others:
 
-1. "name" – (string; required) – the name of the layout area, should be unique within the layouts array 
+1. "name" – [string; required] – the name of the layout area, should be unique within the layouts array 
 
-2. "doc" – (string; optional) – documentation for the layout area, use to describe what the layout area is for 
+2. "doc" – [string; optional] – documentation for the layout area, use to describe what the layout area is for 
 
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – layout area-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some pack file processors] – layout area-specific configuration (See also, Configuation above)
 
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – layout area-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some pack file processors] – layout area-specific options (See also, Options above)
 
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – layout area-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – layout area-specific data (See also, Data above)
 
-6. "object-placements" – (array; required) – a list of object placements in the layout area, described below
+6. "object-placements" – [array; required] – a list of object placements in the layout area, described below
 
 Each object placement consists of a specification for zero to many locations of the same object within the layout area, to be processed by the pack file processor. A object placement consists of the following named objects, although a specific pack file processor may add others:
 
-1. "object" - (string; required) – the name of the object to place zero to many times in the layout area; in most cases this will refer to an object-type resource, but the reference could be to an object specified in a separate pack file or to an object built into the runtime; should be unique within the object placements
+1. "object" - (string; required] – the name of the object to place zero to many times in the layout area; in most cases this will refer to an object-type resource, but the reference could be to an object specified in a separate pack file or to an object built into the runtime; should be unique within the object placements
 
-2. "doc" – (string; optional) – documentation for the object placement, use to describe what the object placement is for 
+2. "doc" – [string; optional] – documentation for the object placement, use to describe what the object placement is for 
 
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – object placement-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some pack file processors] – object placement-specific configuration (See also, Configuation above)
 
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – object placement-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some pack file processors] – object placement-specific options (See also, Options above)
 
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – object placement-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – object placement-specific data (See also, Data above)
 
-6. "placements" – (array; required) – a list of placement commands for the object, described below
+6. "placements" – [array; required] – a list of placement commands for the object, described below
 
 IMPORTANT! The pack file specification does not detail configuration, options, and data values for object placements. Please refer to the documentation for the pack file processor you will be using for more information.
 
 Each placement command consists of the following objects:
 
-1. "placer" – (string; required) – the placement algorithm to use
+1. "placer" – [string; required] – the placement algorithm to use
 
-1. "place-name" – (string; required) – A unique name within the Layout Area, used to identify all instances of this placement
+1. "place-name" – [string; required] – A unique name within the Layout Area, used to identify all instances of this placement
 
-2. "doc" – (string; optional) – documentation for the placement command, use to describe what the placement is for 
+2. "doc" – [string; optional] – documentation for the placement command, use to describe what the placement is for 
 
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – placement command-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some pack file processors] – placement command-specific configuration (See also, Configuation above)
 
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – placement command-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some pack file processors] – placement command-specific options (See also, Options above)
 
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – placement command-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – placement command-specific data (See also, Data above)
 
 IMPORTANT! The pack file specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the pack file processor you will be using for more information.
-
-## Wiring
-
-The wiring section of a module is an array containing one or more 'modifier specs' to include in the output. There can be zero or more mod specs. Modifier are external code 'wired into' the runtime system to make it behave differently. The pack file processor determines which modifiers are supported. Each modifier spec details how to wire in a single external code resource as processed by the pack file processor. A modifier spec consists of the following named objects, although a specific pack file processor may add others:
-
-1. "mod" – (string; required) – the name of the modifier to wire, should be unique within the wiring array 
-
-2. "doc" – (string; optional) – documentation for the modifier spec, use to describe what the modifier spec is for 
-
-3. "config" – (object; optional, but may be required or ignored by some pack file processors) – modifier spec-specific configuration (See also, Configuation above)
-
-4. "options" – (object; optional, but may be required or ignored by some pack file processors) – modifier spec-specific options (See also, Options above)
-
-5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – modifier spec-specific data (See also, Data above)
-
-IMPORTANT! The pack file specification does not detail configuration, options, and data values for mod spec items. Please refer to the documentation for the pack file processor you will be using for more information.
 
 ## Pack File Processors
 
@@ -195,7 +179,7 @@ Pack file processors are computer programs that read in a JSON file conforming t
 
 * Configuring servers and external applications
 
-## Pack Files as a DSL
+## Pack Files as a DSL 
 
 Pack Files support enough complexity to act as a [DSL (Domain-Specific-Language)](https://en.wikipedia.org/wiki/Domain-specific_language) for arbitrary 3D Graphics applications. A DSL is basically a tiny programming language, often declarative, which is focused on a very specific problem domain. 
 

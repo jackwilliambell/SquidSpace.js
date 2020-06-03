@@ -31,21 +31,16 @@ SquidSpace.js supports some special data values to extend the capapabilities of 
 
 ### Hook Function References
 
-SquidSpace.js supports 'Hook Functions' that extend different classes of functionality. For some of these functionality classes the Hook Functions are named, in which case the that name may be referenced in the Pack File data to use instead of the native SquidSpace.js functionality for that functionality class. There are also unnamed hook functions that are not referenced in the Pack File but may invisibly modify SquidSpace.js behavior at runtime or when processing the Pack File. For more detail on Hook Functions see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Hooks documentation)[squidspace-hooks.md].
-
-When something in a Configuration requires a Hook Function to be specified for code generation, for example if the "action" configuration value for a resource type is "hook", then the named Hook Function to use *must* be specified with a Hook Function Reference in the same configuration. The name for a Hook Function Reference is always "hook".
-
-In some cases a Hook Function may be specified for runtime use, in which case it is always specified in the Options section using the name "hook".
-
+SquidSpace.js supports "Hook Functions" that extend different classes of functionality. For some of these functionality classes the Hook Functions are named, in which case the that name may be referenced in the Pack File data to use instead of the native SquidSpace.js functionality for that functionality class. There are also unnamed hook functions that are not referenced in the Pack File but may invisibly modify SquidSpace.js behavior at runtime or when processing the Pack File. For more detail on Hook Functions see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Hooks documentation)[squidspace-hooks.md].
+ 
 Examples:
 
 	"objects": [
 		{
 			"name": "foo",
-			"config": {
-				"action": "hook",
-				"hook": "fooLoader"
-				. . . Other object configuration values.
+			"options": {
+				"loader": "fooLoader",
+				. . . Other object options values.
 			},
 			. . . Other object values.
 		},
@@ -55,8 +50,8 @@ Examples:
 		{
 			"name": "bar",
 			"options": {
-				"hook": "barFader"
-				. . . Other light objects values.
+				"loader": "barFader",
+				. . . Other light options values.
 			},
 			. . . Other light values.
 		},
@@ -64,11 +59,11 @@ Examples:
 
 ### Events Subsections
 
-Certain Pack File sections may contain an "events" subsection in their "options" section. Each Event is specified by an event type and name and and what event types are available are context dependent. If a section supports events the allowed event types are detailed in this document. For more detail on Events see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Events documentation)[squidspace-events.md].
+Certain Pack File sections may contain an "events" subsection. Each Event is specified by an event type and name and and what event types are available are context dependent. If a section supports events the allowed event types are detailed in this document. For more detail on Events see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Events documentation)[squidspace-events.md].
 
 Pack File sections currently supporting Events in their options are:
 
-* Modules – 'World' modules can specify World-level events
+* Modules – "World" modules can specify World-level events
 	- TODO: Keypress events?
 
 * Layout Areas - Each layout area can specify events related to objects and the area boundaries
@@ -86,24 +81,21 @@ The Events subsection is a JSON array of Event JSON objects, each containing the
 
 * "data" - [any type; optional] – Contains data passed to all handlers for the event at runtime when the Event is triggered
 
-For example, if an 'on-click' event is attached to an object in the layout object placements (see below), the Events subsection of the Object's options might look like this:
+For example, if an "on-click" event is attached to an object in the layout object placements (see below), the Events subsection of the Object's options might look like this:
 
 	{
 		"object": "foo-object",
-		"options": {
-			"events": {
-				"on-click": [
-					{
-						"event": "foo-click-event",
-						"options": {
-							"foo": "bar",
-							"count": 3
-						},
-						"data": "bar"
-					}
-				]
-			}
-			. . . Other object placement option values.
+		"events": {
+			"on-click": [
+				{
+					"event": "foo-click-event",
+					"options": {
+						"foo": "bar",
+						"count": 3
+					},
+					"data": "bar"
+				}
+			]
 		}
 		. . . Other object placement values.
 	}
@@ -114,11 +106,23 @@ If the user then clicks the "foo-object" object at runtime, every event handler 
 
 The Top level of the file contains global values applying to the whole file. Besides the "config", "options" and "data" subsections the Top level contains a Modules ("modules") subsection. 
 
+Example:
+
+	{
+		"doc": "Top level.",
+		"config": {
+			. . . Zero or more global configuration values.
+		},
+		"modules": [
+			. . . Zero or more modules.
+		]
+	}
+
 ### Global Configuration
 
-* "js-outdir" – [optional, string] – Directory to write output Javascript output modules to, used by the spacepack tool; can be overridden for individual modules; default value depends on the tool reading the Pack File
+Global configuration must be of type JSON object. Global configuration for the main world Pack File sets the defaults for all related Pack Files. Global configuration of non-world Pack Files may override any provided world Pack File global configuration values.
 
-* "js-indir" – [optional, string] – Directory containing mods or other Javascript files to import; can be overridden for individual mods; default value depends on the tool reading the Pack File
+* "out-dir" – [optional, string] – Directory to write output Javascript output modules to, used by the spacepack tool; can be overridden for individual modules; default value depends on the tool reading the Pack File
 
 * "texture-dir" – [optional, string] – Directory containing textures to import; can be overridden for individual textures; default value depends on the tool reading the Pack File
 
@@ -126,9 +130,28 @@ The Top level of the file contains global values applying to the whole file. Bes
 
 * "object-dir" – [optional, string] – Directory containing objects to import; can be overridden for individual objects; default value depends on the tool reading the Pack File
 
+* "mod-dir" – [optional, string] – Directory containing mods or other Javascript files to import; can be overridden for individual mods; default value depends on the tool reading the Pack File
+
 * "pretty-print" – [optional, boolean, default is false] – If true, all module not specifying otherwise are formatted to be readable, using the "pretty-offset" value for formatting; if false the module is "packed"; can be overridden for individual modules
 
 * "pretty-offset" – [optional, positive integer or zero, default is "3"] – The number of spaces to offset when pretty printing; can be overridden for individual modules
+
+Example:
+
+	{
+		"doc": "Top level.",
+		"config": {
+			"Global configuration."
+			"out-dir": "build/",
+			"texture-dir": "assets/textures/",
+			"material-dir": "assets/materials/",
+			"object-dir": "assets/objects/",
+			"mod-dir": "supportlibs/mods/",
+			"pretty-print": true,
+			"pretty-offset": 3
+		},
+		. . . Other top-level values.
+	}
 
 ### Global Options
 
@@ -142,13 +165,34 @@ None at this time.
 
 Modules are an array of Module JSON objects specified with the key "modules" from the Top level. Besides the "config", "options" and "data" subsections Modules contain Resources ("resources"), Layouts ("layouts"), and Wiring ("wiring") subsections. 
 
+Example:
+
+	{
+		"doc": "Top level.",
+		"modules": [
+			{
+				"doc": "Module containing a resources section.",
+				"name": "exampleModule",
+				"resources": {
+					. . . Zero or more resources.
+				},
+				"layouts": {
+					. . . Zero or more layouts.
+				},
+			},
+			. . . Other modules.
+		],
+		. . . Other top-level values.
+	}
+
+
 ### Module Configuration
 
-* "is-world" – [optional, boolean, default is 'false'] – If true, indicates the module contains a world specification, which may have different processing and can include different data
+Module configuration must be of type JSON object. Module configuration may override any provided global configuration values for that module. (See Global Configuration.) Module configuration may also contain the following values:
 
-* "pretty-print" – [optional, boolean, default is false] – If true, the module is formatted to be readable, using the "pretty-offset" value for formatting; if false the module is "packed"
+* "is-world" – [optional, boolean, default is "false"] – If true, indicates the module contains a world specification, which may have different processing and can include different data
 
-* "pretty-offset" – [optional, positive integer or zero, default is "3"] – The number of spaces to offset when pretty printing
+TODO: Determine if simply naming a module 'world' should be enough to trigger 'is-world' and, therefore, we do not need that configuration value.
 
 ### Module Options
 
@@ -164,39 +208,206 @@ None at this time.
 
 ## Resources
 
-Resources are JSON objects that contain none, some, or all of Textures ("textures"), Materials ("materials"), Objects ("objects"), and Lights ("lights") subsections. Resources do not contain "config", "options" and "data" subsections.
+Resources are JSON objects that contain none, some, or all of Textures ("textures"), Materials ("materials"), Objects ("objects"), Lights ("lights") and Mods ("mods") subsections. Each of these resource types are used at runtime by SquidSpace.js via a Loader Hook Function. (See Loader Hook Functions below.) 
+
+Example:
+
+	"modules": [
+		{
+			"doc": "Module containing a resources section.",
+			"name": "exampleModule",
+			"resources": {
+				"textures": [
+					. . . Zero or more texture resources.
+				],
+				"materials": [
+					. . . Zero or more material resources.
+				],
+				"object": [
+					. . . Zero or more object resources.
+				],
+				"mods": [
+					. . . Zero or more mod resources.
+				]
+			},
+			. . . Other module values.
+		},
+		. . . Other modules.
+	]
+
+### Resource Data Caching
+
+Besides controlling data packing during code generation, Pack Files may also be used to manage an asset pipeline that manages a local resource cache, with optional optimization. This means there are three ways to manage file resources:
+
+1. Local – The file is stored locally and may be accessed using a relative file path from the directory containing the Pack File; "Local" files may be used with either "Insert" or "Link" ("Local" files are already in the cache)
+
+3. Cached – The file is copied from a fully qualified file location or from a URL to a local file path and optimized if necessary, after which it is available with a relative file path exactly like a "Local" file; "Cached" files may be used with either "Insert" or "Link" ("Cached" files are added to the cache)
+
+2. Remote – The file is kept at remote location and always loaded from a fully qualified URL; "Remote" files may only be used with "Link" ("Remote" files are not cached and may even not be served from the same base URL if CORS headers are set up properly)
+
+The directories used for "Local" or "Cached" files are specified in the global configuration. (See Global Configuration.)
+
+Resource Data Caching is not a runtime functionality, therefore all cache control values are specified in the resource configuration. (See Standard Resource Configuration.)
+
+Whether and how files are cached is specified in the configuration subsection of each individual resource.
+
+IMPORTANT! It may be nescessary to run asset pipeline management tools against a Pack File to pre-load the cache before you can run the code generation tools, in cases where the file data is to be inserted.
+
+### Resource Data Packing
+
+Some resources may be specified entirely within the Pack File using the option and data subsections. However, other resources may require external asset files of some kind. In the latter case SquidSpace.js provides a three ways to get the file data at runtime:
+
+1. None – No file is used, if the specified Loader Hook Function requires data of some kind it is encoded directly into the pack file as a "data" subsection and copied into the generated code as the "data" value (basically the data is already 'packed')
+
+2. Insert – The full contents of a file or URL are inserted directly into the generated code as the "data" value; using binary encoding, if required (in this way "Insert" is exactly like "None", except the data is 'packed' from a file)
+
+3. Link – The contents of the file are loaded externally at runtime using a fully-specified URL or a relative link copied into the generated code as the "data" value
+
+Advantages of "Insert" and "None" include the ability to load resources from the file system without experiencing CORS limitations and reducing the number of separate network streams required; with faster load times and no lost data due to network timeouts. Disadvantages of "Insert" and "None" includes the possibility of generating very large output files during the Pack step. In most cases "Insert" and "None" provide the best performance and stability.
+
+Advantages of "Link" include the ability to utilize an external resource that might change over time and no CORS issues if your page headers are properly set up and you are not running from the file system. Disadvantages of Link include an increased number of network requests, lost data if the network times out, or the possibility the external resource may not be available at all for some reason.
+
+Resource Data Packing is not a runtime functionality, therefore all pack control values are specified in the resource configuration. (See Standard Resource Configuration.) 
+
+Whether and how data is packed is specified in the configuration subsection of each individual resource.
+
+### Resource Loader Hook Functions
+
+Resource Loader Hook Functions are added to SquidSpace.js at runtime by name and resource type before the buildWorld() API is called. For this reason a loader hook for a Texture resource can have the same name as a loader hook for a light resource, and so on. (See Hook Function References.)
+
+TODO: 
+	
+NOTE: Resource Loader Hooks allow for alternative data loading methods, pre-defined resources (builtins) which are created from code, or any other resources created outside of the regular resource loading functionality. For more detail on Hook Functions see the [SquidSpace.js API documentation](squidspace-api.md) and the [SquidSpace.js Hooks documentation](squidspace-hooks.md).
 
 ### Standard Resource Configuration
 
 All resource configuration subsections provide the following standard resource configuration values:
 
-* "dir" – [optional, string] – Directory containing resource to import; overrides the global 'dir' value for the resource section
+* "cache-options" – [optional, JSON object] – Specifies file cacheing options for the resource, default is no cacheing (local file resource only), options are:
+	- "file-source" – [optional, string containing a fully-qualified file path; do not use if "url-source" is specified] – Specifies the source of the data to cache
+	- "url-source" – [optional, string containing a fully-qualified URL; do not use if "file-source" is specified] – Specifies the source of the data to cache
+	- "optimizations" – [optional, JSON object containing optimization settings for the file] – Specifies the optimizations to perform on the data when it is being cached or inserted; the specific optimization values are specified differently for each file type and are documented in the tools; if not provided the default optimizations for the file type are applied and may depend on asset management plugins
 
-* "action" – [required, string, one of "insert", "link", "cache", or a Hook String] – Specifies the action to take for the resource
-	- "insert" – The referenced resource data is copied into the generated output file; forces caching when managing asset pipelines
-	- "link" – The referenced resource data is always loaded at runtime from a URL; results in no action by asset pipelines and the data is served via the URL
-	- "cache" – The referenced resource data is always loaded at runtime from a URL; the asset pipeline will copy the data to a local cache to be served from there
-	- "hook" – The referenced resource data is a 'Resource Loader Hook' provided by SquidSpace.js or by a loaded mod; the Hook Name itself is arbitrary and must refer to an attached resource Builtin Hook Function 
-	
-* "hook" – [required if the "action" value is "hook", otherwise do not use, string] – References the Resource Loader Hook Function to use to load the resource; the hook function will be passed the options and data sections for the resource at runtime
+* "pack-options" – [optional, JSON object] – Specifies file packing options for the resource, default is no packing (use "data" value as-is), options are:
+	- "action": [optional, string containing one of "none", "insert", "link"] – Specifies file packing options for the resource, default is "none"
+	- TODO: Other options?
 
-NOTE: Resource Loader Hooks allow for pre-defined resources (builtins) which are created from code or otherwise outside of the regular resource loading functionality. For more detail on Hook Functions see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Hooks documentation)[squidspace-hooks.md]
+* "dir" – [optional, string; use only if "file-name" is also specified] – Directory containing the file resource; overrides the global "dir" value for the resource section; when doing cacheing also specifies the directory the file is cached in
+
+* "file-name" – [required if "pack" is "insert" optional if "pack" is "link", string; do not use if "url" is specified, do not use if "pack" is "none"] – Specifies the file resource in the related resource directory; when doing cacheing also specifies the file name of the cached file
+
+* "url" – [optional if "pack" is "link", string containing a fully-qualified URL; do not use if "file-name" is specified, do not use if "pack" is "insert" or "none"] – Specifies the file resource URL
+
+During asset pipeline management, if "cache-options" is not supplied the resource is ignored. Otherwise the file will be cached during asset pipeline management. This means the file is fetched from the source specified in the "cache-options", selected optimizations are performed on the file, and then the file is saved to the related resource directory using the "file-name" value. (See Resource Data Caching.) For this reason the "cache-options" subsection must contain one of a "file-source" or a "url-source" value referring to a valid file of the correct resource type and, minimally, the "file-name" must also be specified in the configuration. Do not specify a "url" in the configuration.
+
+During code generation, if the "pack-options" is not supplied or the "action" is "none" the resource "options" and "data" subsections are used as-is. If "action" is "link" and a "file-name" value is specified it is assumed the file will be served locally using a relative URL from the related resource directory and the resource "data" value will be a JSON object containing the keys "dir" and "file-name". If "pack" is "link" and a "url" value is specified it is assumed the file will be served remotely and the resource "data" value will be a JSON object containing the key "url". If "pack" is "insert" and a "file-name" value is specified, the file will be opened and inserted into the resource "data" value as a string. 
+
+Examples:
+
+	"textures": [
+		{
+			"name": "foo",
+			"config": {
+				"doc": "No cache, no pack. (Default.) No 'config' subsection results in same behaviour.",
+				"pack-options": {
+					"action": "none"
+				},
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "bar",
+			"config": {
+				"doc": "No cache, local link.",
+				"pack-options": {
+					"action": "link"
+				},
+				"file-name": "bar.png"
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "barinsert",
+			"config": {
+				"doc": "No cache, insert local file.",
+				"pack-options": {
+					"action": "insert"
+				},
+				"file-name": "bar.png"
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "barcachelink",
+			"config": {
+				"doc": "Cache, local link. Local source.",
+				"cache-options": {
+					"file-source": "~/images/bar.png"
+				},
+				"pack-options": {
+					"action": "link"
+				},
+				"file-name": "bar.png"
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "barcacheinsert",
+			"config": {
+				"doc": "Cache, insert cached file.",
+				"cache-options": {
+					"file-source": "~/images/bar.png"
+				},
+				"pack-options": {
+					"action": "insert"
+				},
+				"file-name": "bar.png"
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "baz",
+			"config": {
+				"doc": "No cache, remote link.",
+				"pack-options": {
+					"action": "link"
+				},
+				"url": "http://example.com/images/baz.png"
+			},
+			. . . Other texture values.
+		},
+		{
+			"name": "bazcachelink",
+			"config": {
+				"doc": "Cache, local link. Remote source.",
+				"cache-options": {
+					"url-source": "http://example.com/images/baz.png"
+				},
+				"pack-options": {
+					"action": "link"
+				},
+				"file-name": "baz.png"
+			},
+			. . . Other texture values.
+		},
+		. . . Other textures.
+	],
+
+TODO: Pack options? 
 
 ### Standard Resource Options
 
-There are no standard resource options subsection values at this time. Some resource types have standard options and builtins may require certain specified options.
+There are no standard resource options subsection values at this time. Some resource types have standard options and Resource Loader Hooks may require certain specified options.
 
-If the configuration "action" value is "hook" the options data subsection may contain any values expected by the Hook Function.
+If the configuration "loader" value is a Resource Loader Hook the options data subsection may contain any values expected by the referenced Hook Function.
 
 ### Standard Resource Data
 
-If the configuration "action" value is "hook" a resource data subsection may contain any values expected by the Hook Function.
+If the configuration "loader" value is a Resource Loader Hook Function the resource data subsection may contain any values expected by the Hook Function using any valid JSON type, including JSON objects and arrays. Pack file extension value types such as Expression Strings and Binary Strings are allowed.
 
-For all other configuration "action" values the resource data subsection values are either JSON strings or Expression Strings.
+For all other configuration "loader" values the resource data subsection values are usually copied in from an external source. (See "file-source" and "url-source" in the resource configuration section above.) When you are specifying a configuraton source any data section value you also specify will be overwritten with the data from the source.
 
-If the value is a standard JSON string it is either a file reference or, if the configuration "action" value is "link", it is a URL. 
-
-If the value is an Expression String it is either an expression returning a URL or, if the configuration "action" value is "insert", it is the actual data to insert.
+This means if you do specify a data subsection for an "insert", "link" or "cache" loader you must not specify a source in the configuration. For "insert" loaders the "data" value must be the actual data value, an Expression String resulting in the data value or a Binary String containing the data value. For "link" or "cache" loaders it must be a URL or an Expression String resulting in a URL.
 
 ## Textures
 
@@ -208,11 +419,11 @@ Texture resources support the Standard Resource Configuration.
 
 ### Texture Options
 
-Texture resources support the Standard Resource Options, plus the following if the configuration "action" value is not "hook":
+Texture resources support the Standard Resource Options, plus the following if the configuration "loader" value is not "hook":
 
-* "type" – [required if the "action" is "insert" and the data is an Expression String, otherwise do not use, string] – Specifies the file type of the texture resource in the form of a file name extension; for example '.png', '.jpeg', etc.
+* "type" – [required if the "loader" is "insert" and the data is an Expression String, otherwise do not use, string] – Specifies the file type of the texture resource in the form of a file name extension; for example ".png", ".jpeg", etc.
 
-If the configuration "action" value is "hook", the options may contain values dependent on the Resource Loader Hook Function specified in the configuration.
+If the configuration "loader" value is "hook", the options may contain values dependent on the Resource Loader Hook Function specified in the configuration.
 
 ### Texture Data
 
@@ -226,9 +437,9 @@ Materials are an array of Material JSON objects specified with the key "material
 
 ### Material Configuration
 
-Material resources support the Standard Resource Configuration, except the only allowed action is a Builtin Hook Name.
+Material resources support the Standard Resource Configuration, except the only allowed loader is a Builtin Hook Name.
 
-At this time Materials do not have a data type that can be specified for inserting or loaded via a URL. All materials are 'builtins' specified with Resource Loader Hook Function and their option and data values are dependent on the named Resource Loader Hook Function in the configuration.
+At this time Materials do not have a data type that can be specified for inserting or loaded via a URL. All materials are "builtins" specified with Resource Loader Hook Function and their option and data values are dependent on the named Resource Loader Hook Function in the configuration.
 
 ### Material Options
 
@@ -242,7 +453,9 @@ Material resource data values and types are dependent on the Resource Loader Hoo
 
 ## Objects
 
-Modules are an array of 3D Object JSON objects specified with the key "objects" from the Module/Resources level. Objects do not have subsections other than "config", "options", and "data".
+Objects are an array of 3D Object JSON objects specified with the key "objects" from the Module/Resources level. Objects do not have subsections other than "config", "options", and "data".
+
+NOTE: Lights and user cameras are considered a special case of 'Object' and are specified in the Objects section using special Object Loader hooks functions.
 
 ### Object Configuration
 
@@ -250,17 +463,15 @@ Object resources support the Standard Resource Configuration.
 
 ### Object Options
 
-Object resources support the Standard Resource Options, plus the following if the configuration "action" value is not "hook":
+Object resources support the Standard Resource Options:
 
-* "space-object" – [optional, default is false] – Specifies that the object is  made visible in the space at startup using the object's own position data; otherwise the object is a "layout object" and is made invisible in the space at startup and must be placed into the space using a layout (see also, Area  Layouts below)
+* "space-object" – [optional, default is false] – Specifies that the object is made visible in the space at startup using the object's own position data; otherwise the object is a "layout object" and is made invisible in the space at startup and must be placed into the space using a layout (see also, Area  Layouts below)
 
-The following options values are specific to "object" sections:
-
-* "loader" – [required if the action is "insert" or "link" and the object file type is not ".babylon", otherwise do not use] – Used to specify the Babylon.js object loading plugin to use by file name extension; currently supported loader values include:
+* "type" – [required if the object loader is "insert" or "link" and the object file type is not ".babylon", otherwise do not use] – Used to specify the Babylon.js object loading plugin to use by file name extension; currently supported loader values include:
 	 - ".obj"
 	 - TODO: Research what filename extensions Babylon.js loaders support and add here
 
-If the configuration "action" value is "hook", the options may contain values dependent on the Resource Loader Hook Function specified in the configuration.
+If the configuration "loader" value is "hook", the options may contain values dependent on the Resource Loader Hook Function specified in the configuration.
 
 Object options may also contain an "events" section, specifying options and data for the following event types:
 
@@ -274,23 +485,35 @@ Object data consists of all the geometry/meshes for a single object added to the
 
 Object resources support the Standard Resource Data using a standard 3D object type. Currently SquidSpace.js only supports data for non builtin 3D objects.
 
-## Lights
+## Mods
 
-Lights are an array of Light JSON objects specified with the key "lights" from the Module/Resources level. Lights do not have subsections other than "config", "options", and "data".
+TODO: Rewrite and make work.
 
-At this time lights do not have a data type that can be specified for inserting or loaded via a URL. All lights are 'builtins' specified with Resource Loader Hook Function and their option and data values are dependent on the named Resource Loader Hook Function in the configuration.
+The Mods section of a module is an array containing one or more "modifier specs" to include in the output. There can be zero or more mod specs. Modifier are external code "wired into" the runtime system to make it behave differently. The pack file processor determines which modifiers are supported. Each modifier spec details how to wire in a single external code resource as processed by the pack file processor. A modifier spec consists of the following named objects, although a specific pack file processor may add others:
 
-### Light Configuration
+1. "mod" – (string; required) – the name of the modifier to wire, should be unique within the wiring array 
 
-Light resources support the Standard Resource Options. They may contain values dependent on the Resource Loader Hook Function specified in the configuration.
+2. "doc" – (string; optional) – documentation for the modifier spec, use to describe what the modifier spec is for 
 
-### Light Options
+3. "config" – (object; optional, but may be required or ignored by some pack file processors) – modifier spec-specific configuration (See also, Configuation above)
 
-Light resource data values and types are dependent on the Resource Loader Hook Function specified in the configuration.
+4. "options" – (object; optional, but may be required or ignored by some pack file processors) – modifier spec-specific options (See also, Options above)
 
-### Light Data
+5. "data" – (any type; optional, but may be required or ignored by some pack file processors) – modifier spec-specific data (See also, Data above)
 
-Light resource data values and types are dependent on the Resource Loader Hook Function specified in the configuration.
+IMPORTANT! The pack file specification does not detail configuration, options, and data values for mod spec items. Please refer to the documentation for the pack file processor you will be using for more information.
+
+### Mod Configuration
+
+Mod resources support the Standard Resource Options. They may contain values dependent on the Resource Loader Hook Function specified in the configuration.
+
+### Mod Options
+
+Mod resource data values and types are dependent on the Resource Loader Hook Function specified in the configuration.
+
+### Mod Data
+
+Mod resource data values and types are dependent on the Resource Loader Hook Function specified in the configuration.
 
 ## Layouts
 
@@ -298,9 +521,9 @@ Layouts are JSON arrays containing a list of Layout Area JSON objects. Layouts d
 
 ## Layout Areas
 
-Layout Areas are JSON objects specifying a single area within the 3D space, each of which contain zero or more 'object placements' specifying what objects the Layout Area contains and where they are located. Layout areas are dimennsioned as rectangular with a width and depth and specified with an origin point based off of the world origin. 
+Layout Areas are JSON objects specifying a single area within the 3D space, each of which contain zero or more "object placements" specifying what objects the Layout Area contains and where they are located. Layout areas are dimennsioned as rectangular with a width and depth and specified with an origin point based off of the world origin. 
 
-Layout Areas are singlular and contiguous, but may overlap with other Layout Areas. The object placements they contain use the layout area origin point when placing 'standalone' objects, but do not need to be located within the Layout Area.
+Layout Areas are singlular, box shaped, and contiguous; but may overlap with other Layout Areas. The object placements they contain use the layout area origin point when placing "standalone" objects, but do not need to be located within the Layout Area.
 
 ### Layout Area Configuration
 
@@ -310,15 +533,15 @@ None at this time.
 
 Layout Area options must be of type JSON object. The following named values are supported:
 
-* "origin" – [required if the Layout Area is included in a World specification module, required if specifying a Layout Area not also specified in a World specification module, otherwise do not use; array of x, y, z values] Used to specify the NW corner of the Layout Area as an origin point, based on the World origin point
+* "size" – [required if the Layout Area is included in a World specification module, required if specifying a Layout Area not also specified in a World specification module, otherwise do not use; array of w, h, d values] Specifies the size of the layout area in terms of width (w), height (h), and depth (d) where w is east/west, h is up/down and d is north/south
 
-* "events" – [optional ]
+* "origin" – [required if the Layout Area is included in a World specification module, required if specifying a Layout Area not also specified in a World specification module, otherwise do not use; array of x, y, z values] Used to specify the NW corner of the Layout Area as an origin point, based on the World origin point where x is east/west, y is up/down and z is north/south
+
+* "events" – [optional TODO]
 
 TODO: Layout Area-level events, such as "on-keypress", "on-user-enter/leave", etc.
 
-NOTE: If the origin is specified for a Layout Area of the same name in the World specification module and in a separate module for a Layout Area of the same name, the "origin" value from the World specification module is used and the separate module's "origin" value is ignored.
-
-NOTE: A common use case is to declare Layout Areas with no or few object placements in a World specification module and then re-use those named Layout Areas in other modules, adding other object placements.
+NOTE: When a Layout Area is specified in the World specification module and there is a Layout Area of the same name in another module, the "size" and/or "origin" values from the World specification module are used and the separate module's "size" and/or "origin" values are ignored. A common use case is to declare Layout Areas with no or few object placements in a World specification module and then re-use those named Layout Areas in other modules, adding other object placements in those modules.
 
 ### Layout Area Data
 
@@ -326,9 +549,9 @@ None at this time.
 
 ## Object Placements
 
-Object Placements are JSON objects specifying zero or more 'placements' for a single object within a Layout Area, each of which contain zero or more 'placements' specifying the places that object is located. 
+Object Placements are a JSON array of JSON objects specifying zero or more "placements" for a single object within a Layout Area, each of which contain zero or more "placements" specifying the places that object is located. 
 
-Object Placements specify a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a 'builtin' by the runtime. All of the contained placements are for the same object using the same Object Placement options.
+Object Placements specify a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a "builtin" by the runtime. All of the contained placements are for the same object using the same Object Placement options.
 
 WARNING! Specifying an object name that is not loaded results in undefined behavior. 
 
@@ -344,9 +567,9 @@ None at this time.
 
 * "events" – [optional, Events subsection] – Specifies one or more events applying to all object placements
 
-The Materials option specify a named material, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a 'builtin' by the runtime. 
+The Materials option specify a named material, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a "builtin" by the runtime. 
 
-NOTE: Applying materials to an Object Placement creates a 'clone' of the named object and all placements are instances of that clone. If no materials are applied all placements are instances of the original object. Generally clones create more geometry in the World space and use more memory and other runtime resources, so they should be avoided if possible.
+NOTE: Applying materials to an Object Placement creates a "clone" of the named object and all placements are instances of that clone. If no materials are applied all placements are instances of the original object. Generally clones create more geometry in the World space and use more memory and other runtime resources, so they should be avoided if possible.
 
 WARNING! Specifying a material name that is not loaded results in undefined behavior. 
 
@@ -358,9 +581,9 @@ None at this time.
 
 ## Placements
 
-Placements are JSON objects specifying the location in the World space of an instance of the object specified in the containing Object Placement. Each Placement must specify a named "placer" algorithm to use, which must be a SquidSpace.js builtin placer or a 'Placer Hook' loaded from a mod. Placements must also specify a unique "place-name" used within the Layout Area for the object instance(s) being placed. 
+Placements are JSON objects specifying the location in the World space of an instance of the object specified in the containing Object Placement. Each Placement must specify a named "placer" algorithm to use, which must be a SquidSpace.js builtin placer or a "Placer Hook" loaded from a mod. Placements must also specify a unique "place-name" used within the Layout Area for the object instance(s) being placed. 
 
-NOTE: If a placer algorithm results in multiple instances of the object, the instances are named using the "place-name" specified, with a dash ('-') and a number appended, where that number is zero to the number of instances placed minus one.
+NOTE: If a placer algorithm results in multiple instances of the object, the instances are named using the "place-name" specified, with a dash ('-") and a number appended, where that number is zero to the number of instances placed minus one.
 
 ### Placement Configuration
 
@@ -368,21 +591,21 @@ None at this time.
 
 ### Placement Options
 
-The Placement options are dependent on the placer algorithm. Some builtin placer algorithms have specific options and if the placer algorithms specified is for a 'placer hook' the data subsection may contain any values expected by the Hook Function.
+The Placement options are dependent on the placer algorithm. Some builtin placer algorithms have specific options and if the placer algorithms specified is for a "placer hook" the data subsection may contain any values expected by the Hook Function.
 
-Standard option values for all Placer Algorithms, both builtins and 'placer hook functions' include:
+Standard option values for all Placer Algorithms, both builtins and "placer hook functions" include:
 
 * "position" – [optional; array of x, y, z values, defaults to [0, 0, 0]] – Specifies the position of the placed object; if "place-on-object" is not specified the position is based on the Layout Area's origin, otherwise the position is based on the named submesh's origin (TODO: Find out Babylon.js standard origin point for submeshes); see below for "place-on-object" values
 
-* "rotation" – [optional; number value specifying the rotation of all placed objects for a placement, defaults to 0]
+* "rotation" – [optional; array of x, y, z rotation values, defaults to [0, 0, 0]] Specifies the rotation to apply to all submeshes of the object for each axis
 
-All SquidSpace.js builtins and some 'placer hook functions' also support:
+All SquidSpace.js builtins and some "placer hook functions" also support:
 
 * "place-on-object" – [optional; the name of an object previously placed in the World Space within the same Layout Area] – Specifies an object to place an instance of this Object Placement on
 
 * "place-on-submesh" – [required if "place-on-object" is specified, otherwise do not use; A submesh of the object specified with the "place-on-object" value
 
-NOTE: A common submesh naming pattern for objects which will have other objects placed on them is to use 'top', 'bottom', 'left', 'right', 'front', and 'back' if possible. 
+NOTE: A common submesh naming pattern for objects which will have other objects placed on them is to use "top", "bottom", "left", "right", "front", and "back" if possible. 
 
 WARNING: "place-on-object" values are dependent on object loading order. This is determined by the order in which the pack file modules are passed to SquidSpace.js, where the first module loaded is *always* the World specification module, after which other pack file modules are loaded in an order specified when SquidSpace.js is initialized at runtime.
 
@@ -392,11 +615,11 @@ For other possible placement option values, see Builtin Placer Algorithms below.
 
 ### Placement Data
 
-There are no standard Placement data subsection values at this time. If the placer algorithms specified is for a 'placer hook' the data subsection may contain any values expected by the Hook Function.
+There are no standard Placement data subsection values at this time. If the placer algorithms specified is for a "placer hook" the data subsection may contain any values expected by the Hook Function.
 
 ### Builtin Placer Algorithms
 
-SquidSpace.js includes a number of builtin placer algorithms, any of which may be overridden by a 'placer hook function' using the same name and using the same options. 
+SquidSpace.js includes a number of builtin placer algorithms, any of which may be overridden by a "placer hook function" using the same name and using the same options. 
 
 The builtin placer algorithms are:
 
@@ -404,28 +627,20 @@ The builtin placer algorithms are:
 
 * "linear-series" - Places a row of instances of an object starting from a particular location; requires the standard placement options values, plus:
 	- "count" – [required; integer] – Specifies number of object instances to place in a row
-	- "across" – [optional; boolean, default is true] – Specifies whether the series goes from lesser 'x' to a greater 'x' value (true) or from lesser 'z' to a greater 'z' value (false)
-	- "offset" – [optional; number, default is '0'] – Specifies in size units the offset between objects when they are placed, if a negative value the objects may overlap
+	- "across" – [optional; boolean, default is true] – Specifies whether the series goes from lesser "x" to a greater "x" value (true) or from lesser "z" to a greater "z" value (false)
+	- "offset" – [optional; number, default is "0"] – Specifies in size units the offset between objects when they are placed, if a negative value the objects may overlap
 
 * "rectangle" - Places a rectangle of instances of an object starting from a particular location; requires the standard placement options values, plus:
-	- "countWide" – [required; integer] – Specifies number of object instances to place in a row from lesser 'x' to a greater 'x' value
-	- "countDeep" – [required; integer] – Specifies number of object instances to place in a row from lesser 'z' to a greater 'z' value
-	- "lengthOffset" – [optional; number, default is '0'] – Specifies in size units the offset between objects along the 'x' axis when they are placed, if a negative value the objects may overlap
-	- "widthOffset" – [optional; number, default is '0'] – Specifies in size units the offset between objects along the 'x' axis when they are placed, if a negative value the objects may overlap
+	- "countWide" – [required; integer] – Specifies number of object instances to place in a row from lesser "x" to a greater "x" value
+	- "countDeep" – [required; integer] – Specifies number of object instances to place in a row from lesser "z" to a greater "z" value
+	- "lengthOffset" – [optional; number, default is "0"] – Specifies in size units the offset between objects along the "x" axis when they are placed, if a negative value the objects may overlap
+	- "widthOffset" – [optional; number, default is "0"] – Specifies in size units the offset between objects along the "x" axis when they are placed, if a negative value the objects may overlap
 
-NOTE: "linear-series" and "rectangle" placement objects only place along the 'x' and 'z' axis's. The 'y' axis is fixed from the placement's position.
+NOTE: "linear-series" and "rectangle" placement objects only place along the "x" and "z" axis's. The "y" axis is fixed from the placement's position.
 
-TODO: Consider ways to do 'y' axis placement.
+TODO: Consider ways to do "y" axis placement.
 
 TODO: Determine if we need other builtin placement algorithms.
-
-## Wirings
-
-Wirings are JSON arrays containing a list of Modifier JSON objects. Wirings do not contain "config", "options" and "data" subsections.
-
-## Modifiers
-
-TODO
 
 
 
