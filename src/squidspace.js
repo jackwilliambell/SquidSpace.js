@@ -68,9 +68,10 @@ var SquidSpace = function() {
 	var lights = {};
 
 	var logHook = function(message){console.log(message);};
-	var prepareHook = function(scene){self.logInfo("prepareHook()");};
-	var buildHook = function(scene){self.logInfo("buildHook()");};
-	var placerHooks = {};
+	var prepareHook = function(scene){SquidSpace.logInfo("prepareHook()");};
+	var buildHook = function(scene){SquidSpace.logInfo("buildHook()");};
+	var objectLoaderHooks = {};
+	var objectPlacerHooks = {};
 	var userModeHooks = {};
 	
 	var eventHandlers = {};
@@ -106,14 +107,21 @@ var SquidSpace = function() {
 				visible = getValIfKeyInDict("space-object", config, false);
 			}
 			
-			// TODO: Refactor to use hooks. Remove and refactor builtins
-			//       as loader hooks.
-			let builtin = getValIfKeyInDict("builtin", objDict[key], false);
+			// TODO: Refactor for new pack file layout.
+			let data = objDict[key]["data"];
+			let tp = getValIfKeyInDict("type", data, "");
+			
+			// Is the loader hooked?
+			if (tp in objectLoaderHooks) {
+
+			}
+			else {
+
+			}
 			
 			if (builtin) {
 				if (typeof objDict[key]["data"] === "object") {
-					let data = objDict[key]["data"];
-					let tp = getValIfKeyInDict("type", data, "");
+					
 					let sz = getValIfKeyInDict("size", data, [1, 1]);
 					let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
 					let mn = getValIfKeyInDict("material", data, "");
@@ -175,7 +183,7 @@ var SquidSpace = function() {
 	//
 	// Builtins.
 	//
-	// TODO: Remove and refactor these into SquidCommons hooks. 
+	// TODO: Remove and refactor these into SquidCommons or SquidHall hooks. 
 	//
 
 	var addFloor = function (x, y, z, w, d, material, scene) {
@@ -201,16 +209,6 @@ var SquidSpace = function() {
 		floor.checkCollisions = true;
 
 		return floor;
-	}
-
-	var addFloorSection = function(secName, x, z, w, d, material, scene) {
-		var floorSection = BABYLON.MeshBuilder.CreatePlane(secName, 
-												{width: w, height:d}, scene);
-		floorSection.position = new SquidSpace.makeLayoutVector(x, 0.001, z, w, d);
-		floorSection.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
-	    floorSection.material = material;
-		floorSection.material.backFaceCulling = false;
-		return floorSection;
 	}
 	
 	var addCamera = function(x, y, z, targetX, targetY, targetZ, scene) {
@@ -307,11 +305,11 @@ var SquidSpace = function() {
 				if (objName in objects || objName === "_none_") {
 					
 					// Is the placer hooked?
-					if (placer in placerHooks) {
+					if (placer in objectPlacerHooks) {
 						// Try to get the meshes.
 						let meshes = SquidSpace.getLoadedObjectMeshes(objName);
 						// TODO: Wrap with try/catch.
-						placerHooks[placer](areaName, areaOrigin, config, placeName, 
+						objectPlacerHooks[placer](areaName, areaOrigin, config, placeName, 
 											data, objName, meshes, scene);
 					}
 					else {
@@ -609,7 +607,6 @@ var SquidSpace = function() {
 			
 			return undefined;
 		},
-
 		
 		addObjectInstance: function(objName, meshes) {
 			// Force ID of all meshes to the object name.
@@ -622,7 +619,6 @@ var SquidSpace = function() {
 			// Keep a local reference to the object.
 			objects[objName] = meshes;
 		},
-		
 		
 		/** Returns the meshes for the passed object name, assuming the object was 
 		specified in the pack file, loaded with the loadObject(), cloned with cloneObject,
@@ -864,15 +860,27 @@ var SquidSpace = function() {
 			return oldHook;
 		},
 		
-	 	/** The PlacerHook is called by name during layout processing to perform complex
+	 	/** ObjectLoaderHooks are called by name during object loading to create new 
+			instances of complex or custom objects.
+	
+		    Signature: hookFunction(objName, options, data, scene) {return: object instance or undefined if object could not be loaded}
+		 */
+		attachObjectLoaderHook: function(hookName, hookFunction) {
+			let oldHook = objectLoaderHooks[hookName];
+			objectLoaderHooks[hookName] = hookFunction;
+			return oldHook;
+		},
+	
+	 	/** ObjectPlacerHooks are called by name during layout processing to perform complex
 		    or custom object placements.
 		
+			TODO: Fix this signature!
 		    Signature: hookFunction(areaName, areaOrigin, config, placeName, data, 
 		                            objName, meshes, scene) {return: boolean}
 		 */
-		attachPlacerHook: function(hookName, hookFunction) {
-			let oldHook = placerHooks[hookName];
-			placerHooks[hookName] = hookFunction;
+		attachObjectPlacerHook: function(hookName, hookFunction) {
+			let oldHook = objectPlacerHooks[hookName];
+			objectPlacerHooks[hookName] = hookFunction;
 			return oldHook;
 		},
 		
