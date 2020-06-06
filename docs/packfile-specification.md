@@ -1,61 +1,62 @@
-# Pack File Specification
+# Module File Specification
 
-Pack Files let you specify one or more modulesPack files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use pack files to manage asset pipelines and to generate runtime javascript files. The pack file processor and the context the pack file is used in determines what the outputs are and the details of what pack file values are required. (See also, Pack File Processors below.)
+Module Files let you specify one or more modulesModule Files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use Module Files to manage asset pipelines and to generate runtime javascript files. The Module File processor and the context the Module File is used in determines what the outputs are and the details of what Module File values are required. (See also, Module File Processors below.)
 
-Pack files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use pack files to manage asset pipelines and generate runtime javascript files. The pack file processor and the context the pack file is used determines what the outputs are and the details of what pack file values are required. (See also, Pack File Processors and Code Generation below.)
+Module Files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use Module Files to manage asset pipelines and generate runtime javascript files. The Module File processor and the context the Module File is used determines what the outputs are and the details of what Module File values are required. (See also, Module File Processors and Code Generation below.)
 
-Although designed for use by the SquidSpace.js library and toolset, Pack Files are generalized and could be used as inputs for other 3D applications. (See also, Pack Files as a DSL below.)
+Although designed for use by the SquidSpace.js library and toolset, Module Files are generalized and could be used as inputs for other 3D applications. (See also, Module Files as a DSL below.)
 
-IMPORTANT! This specification is for the basic structure of a pack file and does not include any specific features of SquidSpace.js. For details on how pack files are used in SquidSpace.js, see the [SquidSpace.js packfiles documentation](squidspace-packfiles.md) and the [SquidSpace.js tools documentation](squidspace-tools.md).
+IMPORTANT! This specification is for the basic structure of a Module File and does not include any specific features of SquidSpace.js. For details on how Module Files are used in SquidSpace.js, see the [SquidSpace.js packfiles documentation](squidspace-packfiles.md) and the [SquidSpace.js tools documentation](squidspace-tools.md).
 
-A Pack File consists of JSON data containing one or more of the following named top-level objects, although a specific pack file processor may add others:
+A Module File consists of JSON data containing one or more of the following named top-level objects, although a specific Module File processor may add others:
 
 1. "doc" – [string; optional] – documentation for the entire file, use to describe what the file is for 
 
-2. "config" – [object; optional, but may be required or ignored by some pack file processors] – global configuration details for the entire file (See also, Configuation below)
+2. "config" – [object; optional, but may be required or ignored by some Module File processors] – global configuration details for the entire file (See also, Configuation below)
 
-3. "options" – [object; optional, but may be required or ignored by some pack file processors] – global options for the entire file (See also, Options below)
+3. "options" – [object; optional, but may be required or ignored by some Module File processors] – global options for the entire file (See also, Options below)
 
-4. "data" – [any type; optional, but may be required or ignored by some pack file processors] – global data for the entire file (See also, Data below)
+4. "data" – [any type; optional, but may be required or ignored by some Module File processors] – global data for the entire file (See also, Data below)
 	 
-5. "modules" – [array; optional, but may be required or ignored by some pack file processors] – a specification for each module to be generated (see also, Modules below)
+5. "modules" – [array; optional, but may be required or ignored by some Module File processors] – a specification for each module to be generated (see also, Modules below)
 
-Pack File example:
+Module File example:
 
 TODO: Create a good generic exammple.
 
-	
-	
+	{
+		TODO: example
+	}
 
 ## Doc
 
-A 'doc' string may appear as a member of any object in a pack file, including at the top level. The purpose of doc strings is to provide human-readable comments and explanations for that object within the overall context.
+A 'doc' string may appear as a member of any object in a Module File, including at the top level. The purpose of doc strings is to provide human-readable comments and explanations for that object within the overall context.
 
 ## Configuration
 
-A 'config' object may appear as a member of any object in a pack file, including at the top level. The purpose of the config object is to set the configuration values used when processing the object they are attached to. The pack file processor may remove the config values when creating output as they have no runtime meaning. What named values a config object may contain and how they are used is dependent both on the pack file processor and the context of the config object within the pack file.
+A 'config' object may appear as a member of any object in a Module File, including at the top level. The purpose of the config object is to set the configuration values used when processing the object they are attached to. The Module File processor may remove the config values when creating output as they have no runtime meaning. What named values a config object may contain and how they are used is dependent both on the Module File processor and the context of the config object within the Module File.
 
-IMPORTANT! The pack file specification does not specify what named values a config object must or may contain. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not specify what named values a config object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Options
 
-An 'options' object may appear as a member of any object in a pack file, including at the top level. The purpose of the options object is to set the optional values used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on pack file processing. What named values an options object may contain and how they are used is dependent both on the pack file processor and the context of the options object within the pack file.
+An 'options' object may appear as a member of any object in a Module File, including at the top level. The purpose of the options object is to set the optional values used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. What named values an options object may contain and how they are used is dependent both on the Module File processor and the context of the options object within the Module File.
 
-IMPORTANT! The pack file specification does not specify what named values an options object must or may contain. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not specify what named values an options object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Data
 
-An 'data' value (any type allowed) may appear as a member of any object in a pack file, including at the top level. The purpose of the data object is to contain the data value(s) used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on pack file processing. Data values may be any valid JSON type, although the specific type and how it is are used is dependent both on the pack file processor and the context of the data object within the pack file.
+An 'data' value (any type allowed) may appear as a member of any object in a Module File, including at the top level. The purpose of the data object is to contain the data value(s) used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. Data values may be any valid JSON type, although the specific type and how it is are used is dependent both on the Module File processor and the context of the data object within the Module File.
 
-IMPORTANT! The pack file specification does not specify what named values a data object must or may contain. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not specify what named values a data object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Special Value Types
 
-Pack Files support some special value types that extend JSON to allow 
+Module Files support some special value types that extend JSON to allow 
 
 ### Expression Strings ($=)
 
-Pack Files support 'Expression Strings'. Any JSON string value starting with the characters '$=' is an Expression String and the entire contents of the string after those characters is considered to be a Javascript or other programming language expression, not as a standard JSON string value. How expression strings are interprested and evaluated is dependent on the Pack File Processor.
+Module Files support 'Expression Strings'. Any JSON string value starting with the characters '$=' is an Expression String and the entire contents of the string after those characters is considered to be a Javascript or other programming language expression, not as a standard JSON string value. How expression strings are interprested and evaluated is dependent on the Module File Processor.
 
 Expression Strings can be used for any data value of any type, so long as the expression they contain returns the correct value type.
 
@@ -63,9 +64,9 @@ WARNING: Expression Strings can result in runtime failures if they are invalid e
 
 Examples:
 
-	"rotation": "$= Math.pi * 90"
+	"rotation": "$= [0, Math.pi * 90, 0]"
 
-	"rotation": "$= SquidSpace.rotate180"
+	"rotation": "$=[0, SquidSpace.rotate180, 0]"
 
 	"position": "$= [16, MyMod.getFloaterHeight(), 35 * MyMod.backOffsetDefault]"
 
@@ -73,7 +74,7 @@ Examples:
 
 ### Binary Strings ($#)
 
-Pack Files support 'Binary Strings' in Base64 format. Any JSON string value starting with the characters '$#' is a Binary String and the entire contents of the string after those characters must be Base64 data. SquidSpace itself does not translate Binary Strings from Base64, instead it expects the code it passes it to to know the data is in Base64 form and to handle it correctly. How binary strings are interprested converted is dependent on the Pack File Processor.
+Module Files support 'Binary Strings' in Base64 format. Any JSON string value starting with the characters '$#' is a Binary String and the entire contents of the string after those characters must be Base64 data. SquidSpace itself does not translate Binary Strings from Base64, instead it expects the code it passes it to to know the data is in Base64 form and to handle it correctly. How binary strings are interprested converted is dependent on the Module File Processor.
 
 WARNING: Binary Strings can result in runtime failures if they are not valid Base64 or if the data they contain is not the data or data type that was expected. Use them carefully and keep these facts in mind.
 
@@ -81,75 +82,75 @@ TODO: Example
 
 ## Modules
 
-The module section of a pack file is an array of one or more modules to process. Each module item consists of a specification for a single module. A module specification consists of JSON data containing the following named objects, although a specific pack file processor may add others:
+The module section of a Module File is an array of one or more modules to process. Each module item consists of a specification for a single module. A module specification consists of JSON data containing the following named objects, although a specific Module File processor may add others:
 
 1. "name" – [string; required] – the name of the module, should be unique within the module array 
 
 2. "doc" – [string; optional] – documentation for the module, use to describe what the module is for 
 
-3. "config" – [object; optional, but may be required or ignored by some pack file processors] – module-wide configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – module-wide configuration (See also, Configuation above)
 
-4. "options" – [object; optional, but may be required or ignored by some pack file processors] – module-wide options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – module-wide options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – module-wide data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – module-wide data (See also, Data above)
 	 
-6. "resources" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the resources in the module (see also, Resources below)
+6. "resources" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the resources in the module (see also, Resources below)
 	 
-7. "layouts" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the layouts in the module (see also, Layouts below)
+7. "layouts" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the layouts in the module (see also, Layouts below)
 	 
-8. "wiring" – [object; optional, but may be required or ignored by some pack file processors] – a specification for all the wiring in the module (see also, Wiring below)
+8. "wiring" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the wiring in the module (see also, Wiring below)
 
 ### Module Resources
 
-The resources section of a module is an object containing of one or more uniquely named 'resource types' to include in the output. There can be zero or more resource types. Resource types include, but are not limited to, things like object geometry, texture data, material descriptions and so on. The pack file processor determines which resource types are supported. Each resource type contains an array of 'resource items'. Resource items are descrbed below.
+The resources section of a module is an object containing of one or more uniquely named 'resource types' to include in the output. There can be zero or more resource types. Resource types include, but are not limited to, things like object geometry, texture data, material descriptions and so on. The Module File processor determines which resource types are supported. Each resource type contains an array of 'resource items'. Resource items are descrbed below.
 
 To re-state this more clearly: a 'resources' object contains named 'resource types', each of which contain arrays of 'resource items'. 
  
-Each resource item consists of a specification for a single resource to be processed by the pack file processor. A resource item specification consists of the following named objects, although a specific pack file processor may add others:
+Each resource item consists of a specification for a single resource to be processed by the Module File processor. A resource item specification consists of the following named objects, although a specific Module File processor may add others:
 
 1. "name" – [string; required] – the name of the resource, should be unique within the resource type array 
 
 2. "doc" – [string; optional] – documentation for the resource item, use to describe what the resource is for 
 
-3. "config" – [object; optional, but may be required or ignored by some pack file processors] – resource-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – resource-specific configuration (See also, Configuation above)
 
-4. "options" – [object; optional, but may be required or ignored by some pack file processors] – resource-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – resource-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – resource-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – resource-specific data (See also, Data above)
 
-IMPORTANT! The pack file specification does not detail configuration, options, and data values for resource items. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not detail configuration, options, and data values for resource items. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Layouts
 
-The layouts section of a module is an array containing one or more 'layout areas' to include in the output. There can be zero or more layout areas. Layout areas specify an area and contain a layout specification for the objects in that area. A layout area consists of the following named objects, although a specific pack file processor may add others:
+The layouts section of a module is an array containing one or more 'layout areas' to include in the output. There can be zero or more layout areas. Layout areas specify an area and contain a layout specification for the objects in that area. A layout area consists of the following named objects, although a specific Module File processor may add others:
 
 1. "name" – [string; required] – the name of the layout area, should be unique within the layouts array 
 
 2. "doc" – [string; optional] – documentation for the layout area, use to describe what the layout area is for 
 
-3. "config" – [object; optional, but may be required or ignored by some pack file processors] – layout area-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – layout area-specific configuration (See also, Configuation above)
 
-4. "options" – [object; optional, but may be required or ignored by some pack file processors] – layout area-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – layout area-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – layout area-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – layout area-specific data (See also, Data above)
 
 6. "object-placements" – [array; required] – a list of object placements in the layout area, described below
 
-Each object placement consists of a specification for zero to many locations of the same object within the layout area, to be processed by the pack file processor. A object placement consists of the following named objects, although a specific pack file processor may add others:
+Each object placement consists of a specification for zero to many locations of the same object within the layout area, to be processed by the Module File processor. A object placement consists of the following named objects, although a specific Module File processor may add others:
 
-1. "object" - (string; required] – the name of the object to place zero to many times in the layout area; in most cases this will refer to an object-type resource, but the reference could be to an object specified in a separate pack file or to an object built into the runtime; should be unique within the object placements
+1. "object" - (string; required] – the name of the object to place zero to many times in the layout area; in most cases this will refer to an object-type resource, but the reference could be to an object specified in a separate Module File or to an object built into the runtime; should be unique within the object placements
 
 2. "doc" – [string; optional] – documentation for the object placement, use to describe what the object placement is for 
 
-3. "config" – [object; optional, but may be required or ignored by some pack file processors] – object placement-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – object placement-specific configuration (See also, Configuation above)
 
-4. "options" – [object; optional, but may be required or ignored by some pack file processors] – object placement-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – object placement-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – object placement-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – object placement-specific data (See also, Data above)
 
 6. "placements" – [array; required] – a list of placement commands for the object, described below
 
-IMPORTANT! The pack file specification does not detail configuration, options, and data values for object placements. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not detail configuration, options, and data values for object placements. Please refer to the documentation for the Module File processor you will be using for more information.
 
 Each placement command consists of the following objects:
 
@@ -159,17 +160,17 @@ Each placement command consists of the following objects:
 
 2. "doc" – [string; optional] – documentation for the placement command, use to describe what the placement is for 
 
-3. "config" – [object; optional, but may be required or ignored by some pack file processors] – placement command-specific configuration (See also, Configuation above)
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – placement command-specific configuration (See also, Configuation above)
 
-4. "options" – [object; optional, but may be required or ignored by some pack file processors] – placement command-specific options (See also, Options above)
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – placement command-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some pack file processors] – placement command-specific data (See also, Data above)
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – placement command-specific data (See also, Data above)
 
-IMPORTANT! The pack file specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the pack file processor you will be using for more information.
+IMPORTANT! The Module File specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the Module File processor you will be using for more information.
 
-## Pack File Processors
+## Module File Processors
 
-Pack file processors are computer programs that read in a JSON file conforming to the pack file specification and use the data in the pack file to perform some work. The type of work a pack file processor might do includes, but is not limited to:
+Module File processors are computer programs that read in a JSON file conforming to the Module File specification and use the data in the Module File to perform some work. The type of work a Module File processor might do includes, but is not limited to:
 
 * Managing asset pipelines
 
@@ -179,9 +180,9 @@ Pack file processors are computer programs that read in a JSON file conforming t
 
 * Configuring servers and external applications
 
-## Pack Files as a DSL 
+## Module Files as a DSL 
 
-Pack Files support enough complexity to act as a [DSL (Domain-Specific-Language)](https://en.wikipedia.org/wiki/Domain-specific_language) for arbitrary 3D Graphics applications. A DSL is basically a tiny programming language, often declarative, which is focused on a very specific problem domain. 
+Module Files support enough complexity to act as a [DSL (Domain-Specific-Language)](https://en.wikipedia.org/wiki/Domain-specific_language) for arbitrary 3D Graphics applications. A DSL is basically a tiny programming language, often declarative, which is focused on a very specific problem domain. 
 
-SquidSpace uses the Pack File DSL capability to declare the functionality for walkthrough simulations. However, Pack Files are generic enough to drive a completely different kind of 3D application through that application providing different pack file processors, resources, modifiers and/or doing object placement differently.
+SquidSpace uses the Module File DSL capability to declare the functionality for walkthrough simulations. However, Module Files are generic enough to drive a completely different kind of 3D application through that application providing different Module File processors, resources, modifiers and/or doing object placement differently.
 

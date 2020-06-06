@@ -66,16 +66,75 @@ var SquidSpace = function() {
 	var materials = {};
 	var objects = {};
 	var lights = {};
+	
+	//
+	// Hooks.
+	//
 
 	var logHook = function(message){console.log(message);};
 	var prepareHook = function(scene){SquidSpace.logInfo("prepareHook()");};
 	var buildHook = function(scene){SquidSpace.logInfo("buildHook()");};
-	var objectLoaderHooks = {};
+	var textureLoaderHooks = {
+		"default": function(texName, options, data, scene) {
+			//return: object instance or undefined if object could not be loaded
+		}
+	};
+	var materialLoaderHooks = {
+		"default": function(matName, options, data, scene) {
+			//return: object instance or undefined if object could not be loaded
+		}
+	};
+	var objectLoaderHooks = {
+		"default": function(objName, options, data, scene) {
+			return SquidSpace.loadObject(objName, options, data, scene, null, null, false);
+		},
+		"floor": function(objName, options, data, scene) {
+			// TODO: Size should be 3 elements.
+			let sz = getValIfKeyInDict("size", data, [1, 1]);
+			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let mn = getValIfKeyInDict("material", data, "");
+			// TODO: Get material from material list by material name
+			//       with a default if not loaded.
+			return addFloor(pos[0], pos[1], pos[2], sz[0], sz[1], 
+								materials.macadam, scene);
+		},
+		// TODO: Move this loader hook to squidhall.js
+		"floorSection": function(objName, options, data, scene) {
+			// TODO: Size should be 3 elements.
+			let sz = getValIfKeyInDict("size", data, [1, 1]);
+			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let mn = getValIfKeyInDict("material", data, "");
+			// TODO: Get material from material list by material name
+			//       with a default if not loaded.
+			return addFloorSection(key, pos[0], pos[2], sz[0], sz[1], 
+									materials.marble, scene);
+		},
+		"userCamera": function(objName, options, data, scene) {
+			// TODO: Size should be 3 elements.
+			let sz = getValIfKeyInDict("size", data, [1, 1]);
+			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let mn = getValIfKeyInDict("material", data, "");
+			let targetPos = getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
+			// TODO: Get material from material list by material name
+			//       with a default if not loaded.
+			return addCamera(pos[0], pos[1], pos[2], 
+							targetPos[0], targetPos[1], targetPos[2], scene);
+		}
+	};
+	var modLoaderHooks = {
+		"default": function(modName, options, data, scene) {
+			//return: object instance or undefined if object could not be loaded
+		}
+	};
 	var objectPlacerHooks = {};
 	var userModeHooks = {};
 	
+	//
+	// Events.
+	//
+	
 	var eventHandlers = {};
-
+	
 	//
 	// Helper functions.
 	//
@@ -89,101 +148,127 @@ var SquidSpace = function() {
 		
 		return defaultVal;
 	}
-
+	
 	//
-	// Object spec loader.
+	// Spec process functions.
+	//
+	// TODO: Wiring. 
 	//
 	
-	var objectSpecLoader = function(objDict, scene, onSuccessFunc) {
-		for (key in objDict) {
-			// Assume failure.
-			let success = false;
+	var processLoaders = function(loaderSpecs, loaderHooks, scene, loaderTypeName) {
+		// Process all the objects. This does not define processing order, so if we 
+		// run into use cases where there are inter-object depedencies we'll need to
+		// control order as well.
+		for (key in loaderSpecs) {
+			// Get working values.
+			let options = getValIfKeyInDict("options", loaderSpecs[key], {});
+			let data = getValIfKeyInDict("data", loaderSpecs[key], undefined);
+			let loaderName = getValIfKeyInDict("loader", options, "default");
+			let loader = getValIfKeyInDict(loaderName, loaderHooks, undefined);
 			
-			let obj = undefined;
-			let config = undefined;
-			let visible = false;
-			if (typeof objDict[key]["config"] === "object") {
-				config = objDict[key]["config"];
-				visible = getValIfKeyInDict("space-object", config, false);
-			}
-			
-			// TODO: Refactor for new pack file layout.
-			let data = objDict[key]["data"];
-			let tp = getValIfKeyInDict("type", data, "");
-			
-			// Is the loader hooked?
-			if (tp in objectLoaderHooks) {
-
+			// Do we have a loader?
+			if (typeof loader === "function") {
+				// Load it!
+				let result = loader(key, options, data, scene);
+				
+				// Do we have a result?
+				if (result != undefined) {
+					// Append the options.
+					result.options = options;
+					
+					// Save the object for later.
+					SquidSpace.addObjectInstance(key, result);
+				}
 			}
 			else {
-
+				SquidSpace.logError(`No ${loaderTypeName} loader hook named ''${loaderName}''.`);
 			}
+		}
+	}
+	
+	var processLayouts = function(layoutsList, scene) {
+		for (layout of layoutsList) {
+			let areaName = getValIfKeyInDict("area", layout, "");
+			let areaOrigin = getValIfKeyInDict("origin", layout, [0,0,0]);
+			let config = undefined;
+			if (typeof layout["config"] === "object") {
+				config = layout["config"];
+			}
+
+			SquidSpace.logDebug(`processLayouts: ${areaName}`);
 			
-			if (builtin) {
-				if (typeof objDict[key]["data"] === "object") {
+			for (placement of layout["object-placements"]) {
+				let placeName =  getValIfKeyInDict("name", placement, "");
+				let placer = getValIfKeyInDict("placer", placement, "");
+				let objName = getValIfKeyInDict("object", placement, "");
+				let data = getValIfKeyInDict("data", placement, {});
+				
+				SquidSpace.logDebug(`processLayouts placement: ${placeName}/${placer}/${objName}`);
+				
+				// Do we have a valid object name?
+				if (objName in objects || objName === "_none_") {
 					
-					let sz = getValIfKeyInDict("size", data, [1, 1]);
-					let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
-					let mn = getValIfKeyInDict("material", data, "");
-					// TODO: Get material from material list by material name
-					//       with a default if not loaded.
-					// TODO: Refactor this into calls to object builtin hooks.
-					if (tp === "floor") {
-						obj = addFloor(pos[0], pos[1], pos[2], sz[0], sz[1], 
-										materials.macadam, scene);
-						success = true;
+					// Is the placer hooked?
+					if (placer in objectPlacerHooks) {
+						// Try to get the meshes.
+						let meshes = SquidSpace.getLoadedObjectMeshes(objName);
+						// TODO: Wrap with try/catch.
+						objectPlacerHooks[placer](areaName, areaOrigin, config, placeName, 
+											data, objName, meshes, scene);
 					}
-					else if (tp === "floorSection") {
-						obj = addFloorSection(key, pos[0], pos[2], sz[0], sz[1], 
-											materials.marble, scene);
-						//addFloorSection("hugos", 15, 15, 10, 15, materials.marble, scene);
-						success = true;
-					}
-					else if (tp === "usercamera") {
-						let targetPos = getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
-						obj = addCamera(pos[0], pos[1], pos[2], 
-										targetPos[0], targetPos[1], targetPos[2], scene);
-						success = true;
-					}
+					else {
+						// TODO: Consider making these 'builtin hooks' that
+						//       can be overridden.
+						let position = getValIfKeyInDict("position", data, 0);
+						let rotation = norot;
+						if (getValIfKeyInDict("rotation", data, false)) {
+							rotation = rot;
+						}
+   						let plc = [];
+	   					if (placer == "linear-series") {
+							let count = getValIfKeyInDict("count", data, 1);
+							let across = getValIfKeyInDict("across", data, true);
+							let offset = getValIfKeyInDict("offset", data, 0);
+							// TODO: Placements currently do not include 'y'.
+	   						SquidSpace.addLinearSeriesToPlacements(
+	   							placeName, plc, count, position[0], position[2], 
+								offset, across, rotation);
+	   					}
+	   					else if (placer == "rectangle-series") {
+							let countWide = getValIfKeyInDict("countWide", data, 1);
+							let countDeep = getValIfKeyInDict("countDeep", data, 1);
+							let lengthOffset = getValIfKeyInDict("lengthOffset", data, 0);
+							let widthOffset = getValIfKeyInDict("widthOffset", data, 0);
+							// TODO: Placements currently do not include 'y'.
+	   						SquidSpace.addRectangleSeriesToPlacements(
+								placeName, plc, countWide, countDeep, position[0], position[2], 
+								lengthOffset, widthOffset);
+	   					}
+	   					else if (placer == "single") {
+							// TODO: Placements currently do not include 'y'.
+	   						SquidSpace.addSingleInstanceToPlacements(
+								placeName, plc, position[0], position[2], rotation);
+	   					}
+	   					else {
+							// TODO: Throw exception or otherwise handle. (Log?)
+	   					}
+						
+						SquidSpace.logDebug(`processLayouts placer count: ${plc.length}`);
+						
+						if (plc.length > 0) {
+							SquidSpace.placeObjectInstances(objName, plc, undefined, scene);
+						}
+					}					
 				}
 				else {
-					logError("Builtin without data section.")
-					// TODO: Throw Error.
-				}
+					// TODO: Throw exception or otherwise handle. (Log?)
+				}					
 			}
-			else {
-				obj = SquidSpace.loadObject(key, objDict[key], scene, function(newMeshes) {
-					// Process each mesh.
-					for (mesh of newMeshes) {
-						if (visible) {
-							mesh.isVisible = true;
-							mesh.checkCollisions = true;
-						}
-						else {
-							mesh.isVisible = false;
-						}
-					}
-				
-					if (typeof onSuccessFunc == "function") onSuccessFunc(newMeshes);
-				
-					// We are good to go!
-					success = true;
-				});
-			}
-			
-			if (success && obj !== undefined) {
-				// Append the config?
-				if (typeof config === "object") {
-					obj["config"] = config;
-				}
-			}			
 		}
 	}
 	
 	//
-	// Builtins.
-	//
-	// TODO: Remove and refactor these into SquidCommons or SquidHall hooks. 
+	// Loader Builtins.
 	//
 
 	var addFloor = function (x, y, z, w, d, material, scene) {
@@ -208,7 +293,18 @@ var SquidSpace = function() {
 	    //floor.receiveShadows = true; // This seems to increase the CPU requirements by quite a bit.
 		floor.checkCollisions = true;
 
-		return floor;
+		return [floor];
+	}
+
+	// TODO: Refactor this into squidhall.js
+	var addFloorSection = function(secName, x, z, w, d, material, scene) {
+		var floorSection = BABYLON.MeshBuilder.CreatePlane(secName, 
+												{width: w, height:d}, scene);
+		floorSection.position = new SquidSpace.makeLayoutVector(x, 0.001, z, w, d);
+		floorSection.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
+	    floorSection.material = material;
+		floorSection.material.backFaceCulling = false;
+		return [floorSection];
 	}
 	
 	var addCamera = function(x, y, z, targetX, targetY, targetZ, scene) {
@@ -273,98 +369,11 @@ var SquidSpace = function() {
 		}
 		*/
 		
-		return camera;
+		return [camera];
 	}
-	
-	// TODO: Spec loaders for materials, lights, etc.
-	
+		
 	//
-	// Layout spec loader.
-	//
-
-	var layoutSpecLoader = function(layoutsList, scene) {
-		for (layout of layoutsList) {
-			let areaName = getValIfKeyInDict("area", layout, "");
-			let areaOrigin = getValIfKeyInDict("origin", layout, [0,0,0]);
-			let config = undefined;
-			if (typeof layout["config"] === "object") {
-				config = layout["config"];
-			}
-
-			SquidSpace.logDebug(`layoutSpecLoader: ${areaName}`);
-			
-			for (placement of layout["object-placements"]) {
-				let placeName =  getValIfKeyInDict("name", placement, "");
-				let placer = getValIfKeyInDict("placer", placement, "");
-				let objName = getValIfKeyInDict("object", placement, "");
-				let data = getValIfKeyInDict("data", placement, {});
-				
-				SquidSpace.logDebug(`layoutSpecLoader placement: ${placeName}/${placer}/${objName}`);
-				
-				// Do we have a valid object name?
-				if (objName in objects || objName === "_none_") {
-					
-					// Is the placer hooked?
-					if (placer in objectPlacerHooks) {
-						// Try to get the meshes.
-						let meshes = SquidSpace.getLoadedObjectMeshes(objName);
-						// TODO: Wrap with try/catch.
-						objectPlacerHooks[placer](areaName, areaOrigin, config, placeName, 
-											data, objName, meshes, scene);
-					}
-					else {
-						// TODO: Consider making these 'builtin hooks' that
-						//       can be overridden.
-						let position = getValIfKeyInDict("position", data, 0);
-						let rotation = norot;
-						if (getValIfKeyInDict("rotation", data, false)) {
-							rotation = rot;
-						}
-   						let plc = [];
-	   					if (placer == "linear-series") {
-							let count = getValIfKeyInDict("count", data, 1);
-							let across = getValIfKeyInDict("across", data, true);
-							let offset = getValIfKeyInDict("offset", data, 0);
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addLinearSeriesToPlacements(
-	   							placeName, plc, count, position[0], position[2], 
-								offset, across, rotation);
-	   					}
-	   					else if (placer == "rectangle-series") {
-							let countWide = getValIfKeyInDict("countWide", data, 1);
-							let countDeep = getValIfKeyInDict("countDeep", data, 1);
-							let lengthOffset = getValIfKeyInDict("lengthOffset", data, 0);
-							let widthOffset = getValIfKeyInDict("widthOffset", data, 0);
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addRectangleSeriesToPlacements(
-								placeName, plc, countWide, countDeep, position[0], position[2], 
-								lengthOffset, widthOffset);
-	   					}
-	   					else if (placer == "single") {
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addSingleInstanceToPlacements(
-								placeName, plc, position[0], position[2], rotation);
-	   					}
-	   					else {
-							// TODO: Throw exception or otherwise handle. (Log?)
-	   					}
-						
-						SquidSpace.logDebug(`layoutSpecLoader placer count: ${plc.length}`);
-						
-						if (plc.length > 0) {
-							SquidSpace.placeObjectInstances(objName, plc, undefined, scene);
-						}
-					}					
-				}
-				else {
-					// TODO: Throw exception or otherwise handle. (Log?)
-				}					
-			}
-		}
-	}
-	
-	//
-	// Layout Placers.
+	// Layout Builtins.
 	//
 	
 	// TODO: Implement.
@@ -522,58 +531,71 @@ var SquidSpace = function() {
 		//
 		
 
-		/** Loads the named object using the passed object data. Calls the passed success
-		    function if the object is loaded. Adds the object to the internal list, making
-		    it available to the getLoadedObjectMeshes() function. Returns the loaded object
-		    or 'undefined'. 
+		/** Loads the named object using the passed options and data. Calls the passed success
+		    function if the object is loaded calls the passed fail function if the object could 
+			not be loaded. Unless the doNotAdd paramater is true it adds the object to 
+			the internal list, making it available to the getLoadedObjectMeshes() function. 
+			Returns the loaded object or 'undefined'. 
 		
-		    The object data is a dictionary with the same structure as pack file object
-		    data. 
-		 */
-		loadObject: function(objName, objData, scene, onSuccessFunc) {
+		    The options and data values are the same as used for pack file options with the 
+			'default' loader. 
+		*/
+		loadObject: function(objName, options, data, scene, onSuccessFunc, onFailFunc, doNotAdd) {
 			let obj = undefined;
+			let visible = getValIfKeyInDict("visible", options, false);
+			let collisionDetect = getValIfKeyInDict("collision-detection", options, true);
+			// For meshNameFilter, empty string means import *all* meshes in the object.
+			let meshNameFilter = getValIfKeyInDict("mesh-name-filter", options, ""); 
+			let loaderPluginExtension = getValIfKeyInDict("loader-plugin", options, false);
 			
-			// Note: You can add this ImportMesh() argument to force a specific 
-			//       loader plugin by file type. 
-			let loaderPluginExtension = null;
-			//let loaderPluginExtension = ".obj"; // Force obj file loader plugin.
-
-			// File Root arg.
-			let fr = "";
-			if ("root" in objData) {
-				fr = objData["root"];
+			let rootUrl = "";
+			let sceneFilename = null;
+			if (typeof data === "string") {
+				sceneFilename = "data:" + data;
 			}
-
-			// File Name arg.
-			let fn = null;
-			if ("file" in objData) {
-				fn = objData["file"];
+			else if ((typeof data === "object") && ("url" in data)) {
+				rootUrl = data["url"];
 			}
-			else if ("data" in objData) {
-				fn = "data:" + objData["data"];
+			else if ((typeof data === "object") && ("dir" in data) && ("file-name" in data)) {
+				rootUrl = data["dir"];
+				sceneFilename = "data:" + data["file-name"];
 			}
 			else {
-				// TODO: Throw exception.
+				// TODO: Log error. 
+				return undefined;
 			}
-
-			let meshNameFilter = ""; // Empty string means import *all* meshes in the object.
-
-			obj = BABYLON.SceneLoader.ImportMesh(meshNameFilter, fr, fn, scene, 
-					function(newMeshes) {
-						// TODO: Refactor.
-						//if (debugVerbose) logDebug("'" + objName + 
-						//	"' mesh import suceeded. Mesh count: " + newMeshes.length);
-						
-						// Save the meshes for later.
-						SquidSpace.addObjectInstance(objName, newMeshes);
 			
+			// TODO: Events support.
+			
+			BABYLON.SceneLoader.ImportMesh(meshNameFilter, rootUrl, sceneFilename, scene, 
+					function(newMeshes) {
+						// Process each mesh based on the options.
+						for (mesh of newMeshes) {
+							mesh.isVisible = visible;
+							mesh.checkCollisions = collisionDetect;
+						}
+						
+						// Save the meshes for later?
+						if (!doNotAdd) SquidSpace.addObjectInstance(objName, newMeshes);
+						
+						// Is there a success function?
 						if (typeof onSuccessFunc == "function") onSuccessFunc(newMeshes);
+						
+						// We are good!
+						// NOTE: This could be a bug if BJS changes the ImportMesh() function
+						//       to process this in a different thread! It would be better if they
+						//       used a 'future', but they didn't. 
+						// TODO: Research workarounds for ImportMesh().
+						obj = newMeshes;
 					}, null,
 					function(scene, message, exception) {
-						logDebug("== '" + objName + 
+						SquidSpace.logError("== '" + objName + 
 							"' mesh import failed. ==\n  Message: " + 
 							message.substring(0, 64) + " ... " +  message.substring(message.length - 64) +
 							"\n  Exception: " + exception);
+							
+							// Is there a fail function?
+							if (typeof onSuccessFunc == "function") onFailFunc(scene, message, exception);
 					}, 
 					loaderPluginExtension); 
 			
@@ -584,7 +606,8 @@ var SquidSpace = function() {
 		
 		/** Makes a cloned copy of the object for the passed object name, assinging the 
 		    passed clone object name to the new object. Returns the cloned meshes or 
-		    'undefined' if it fails. */
+		    'undefined' if it fails. 
+		*/
 		cloneObject: function(objName, cloneObjName) {
 			let meshes = SquidSpace.getLoadedObjectMeshes(objName);
 			let clone = [];
@@ -621,9 +644,10 @@ var SquidSpace = function() {
 		},
 		
 		/** Returns the meshes for the passed object name, assuming the object was 
-		specified in the pack file, loaded with the loadObject(), cloned with cloneObject,
-		or added with the addObject() function. If the object is available it returns 
-		an array of meshes for the object. If it was not it returns 'undefined'. */
+			specified in the pack file, loaded with the loadObject(), cloned with cloneObject,
+			or added with the addObject() function. If the object is available it returns 
+			an array of meshes for the object. If it was not it returns 'undefined'. 
+		*/
 		getLoadedObjectMeshes: function(objName) {
 			if (objName in objects) {
 				return objects[objName];
@@ -646,9 +670,10 @@ var SquidSpace = function() {
 		},
 		
 		/** Returns the light for the passed light name, assuming the light was 
-		specified in the pack file, loaded with the loadLight(),
-		or added with the addLightInstance() function. If the light is available it 
-		is returned. If it was not it returns 'undefined'. */
+			specified in the pack file, loaded with the loadLight(),
+			or added with the addLightInstance() function. If the light is available it 
+			is returned. If it was not it returns 'undefined'. 
+		*/
 		getLight: function(ltName) {
 			if (ltName in lights) {
 				return lights[ltName];
@@ -981,7 +1006,7 @@ var SquidSpace = function() {
 			}
 
 			// Failed. 
-			SquidSpace.logError(`Unknown user mode: ${modeName}`)
+			SquidSpace.logError(`Unknown user mode: ${modeName}.`)
 			return false;
 		},
 		
@@ -1073,16 +1098,31 @@ var SquidSpace = function() {
 			if (!success) {
 				return success;
 			}
-						
-			// Create world from spec.
-			// TODO: material, lights, etc. spec loaders. Textures should be first,
-			// layouts should be last.	
-			objectSpecLoader(getValIfKeyInDict("objects", worldSpec, {}), scene, null);
-			layoutSpecLoader(getValIfKeyInDict("layouts", worldSpec, []), scene);
+			
+			// Load resources from specs using a specific order to avoid dependency issues.
+			processLoaders(getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, scene, "mods");
 			for (spec of contentSpecs) {
-				objectSpecLoader(getValIfKeyInDict("objects", spec, {}), scene, null);
-				layoutSpecLoader(getValIfKeyInDict("layouts", spec, []), scene);
+				processLoaders(getValIfKeyInDict("mods", spec, {}), modLoaderHooks, scene, "mods");
 			}
+			processLoaders(getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, scene, "textures");
+			for (spec of contentSpecs) {
+				processLoaders(getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, scene, "textures");
+			}
+			processLoaders(getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, scene, "materials");
+			for (spec of contentSpecs) {
+				processLoaders(getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, scene, "materials");
+			}
+			processLoaders(getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, scene, "objects");
+			for (spec of contentSpecs) {
+				processLoaders(getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, scene, "objects");
+			}
+			
+			// Process layouts from specs.
+			processLayouts(getValIfKeyInDict("layouts", worldSpec, []), scene);
+			for (spec of contentSpecs) {
+				processLayouts(getValIfKeyInDict("layouts", spec, []), scene);
+			}
+
 			
 		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
 			// Set gravity for the scene (G force on Y-axis)

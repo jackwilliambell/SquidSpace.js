@@ -19,6 +19,7 @@ class ResourceFlavor(Enum):
     OBJECT = 2
     MOD = 3
     
+    
 class ResourceAction(Enum):
     """Enumeration of supported resource pack-options actions."""
     NONE = 0
@@ -28,7 +29,7 @@ class ResourceAction(Enum):
     
 class ModuleConfiguration(object):
     """Contains a module configuration."""
-    def __init__(self, worldConfigData, fileConfigData, moduleConfigData):
+    def __init__(self, worldConfigData, moduleConfigData):
         """Sets the module configuration to match the passed configuration data."""
         
         # Start by setting defaults
@@ -60,25 +61,7 @@ class ModuleConfiguration(object):
                 self.objDir = worldConfigData["object-dir"]
             if "mod-dir" in worldConfigData:
                 self.modDir = worldConfigData["mod-dir"]   
-        
-        # Override with values from passed file configuration, if any.
-        if not fileConfigData is None and isinstance(fileConfigData, dict):
-            if "pretty-print" in fileConfigData:
-                self.pp = fileConfigData["pretty-print"]
-            if "pretty-offset" in fileConfigData:
-                # TODO: Verify "pretty-offset" is an integer.
-                self.offset = " " * fileConfigData["pretty-offset"]
-            if "out-dir" in fileConfigData:
-                self.outDir = fileConfigData["out-dir"]
-            if "texture-dir" in fileConfigData:
-                self.texDir = fileConfigData["texture-dir"]
-            if "material-dir" in fileConfigData:
-                self.matDir = fileConfigData["material-dir"]
-            if "object-dir" in fileConfigData:
-                self.objDir = fileConfigData["object-dir"]
-            if "mod-dir" in fileConfigData:
-                self.modDir = fileConfigData["mod-dir"]   
-                         
+                                 
         # Override with values from passed module configuration, if any.
         if not moduleConfigData is None and isinstance(moduleConfigData, dict):
             if "pretty-print" in moduleConfigData:
@@ -281,11 +264,16 @@ def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
                     modConfig, baseOffset + modConfig.offset + modConfig.offset)
     elif action == ResourceAction.INSERT and urlVal != None:
         # TODO: Implement.
+        # TODO: Implement differently based on file type (BASE64, etc.).
         raise NotImplementedError("At this time 'insert' actions with 'url' sources are not supported.")
     elif action == ResourceAction.INSERT and fileNameVal != None:
         if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
-        outFile.write('"data": ')
+        outFile.write('"data": "')
+        # TODO: Implement differently based on file type (BASE64, etc.).
         insertTextFile(dirVal + fileNameVal, outFile, singleLine = True)
+        outFile.write('"')
+    else:
+        raise ValueError("Unknown action/source combination.")
             
     # Write the suffix. 
     if modConfig.pp: outFile.write("\n" + baseOffset)
@@ -293,12 +281,12 @@ def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
     
     
 def insertLayoutData(elem, outFile, config, baseOffset):
-    # TODO: Implement something more specific. 
+    # TODO: Implement something more specific?
     insertDict(elem, outFile, config, baseOffset)
     outFile.write(",")
     
     
-def processModule(worldConfig, fileConfig, module):
+def processModule(worldConfig, module):
     """Processes one module's elements and generates a module file."""
     
     # TODO: Improve error handling. Need to decide if we wrap everything in a try-catch or
@@ -314,7 +302,7 @@ def processModule(worldConfig, fileConfig, module):
         moduleConfig = module["config"]
         
     # Create the module processing configuration.
-    modConfig = ModuleConfiguration(worldConfig, fileConfig, moduleConfig)
+    modConfig = ModuleConfiguration(worldConfig, moduleConfig)
     
     # Open module output file.
     mf = open(modConfig.outDir + module["name"] + ".js", "w")
@@ -392,84 +380,77 @@ def processModule(worldConfig, fileConfig, module):
     mf.close()
     
     
-def processPackData(worldConfig, packData):
-    """Processes the Pack Data to generate module files."""
-    # TODO: Document pack data.
+def processModuleData(worldConfig, moduleData):
+    """Processes the Module Data to generate a module file."""
+    # TODO: Document module data.
     
     # DEBUG: Comment out for production.
-    print("Processing Pack Data.");print("")
-    #print(packData);print("")
-    
-    # Get file configuration and set up for processing.
-    fileConfig = {} # Default config is empty dict.
-    if "config" in packData:
-        fileConfig = packData["config"]
-            
-    # Write Modules.
-    if "modules" in packData:
-        for module in packData["modules"]:
-            processModule(worldConfig, fileConfig, module)
+    print("Processing module data.");print("")
+    #print(moduleData);print("")
+                
+    # Write Module.
+    processModule(worldConfig, moduleData)
 
     # DEBUG: Comment out for production.
     print("Processing complete.");print("")
 
 
-def processPackString(worldConfig, packString):
-    """Loads JSON Pack Data from a string and processes it."""
+def processModuleString(worldConfig, moduleDataString):
+    """Loads JSON Module Data from a string and processes it."""
 
     # Assume failure.
-    packData = None
+    moduleData = None
     
     try:
-        packData = json.loads(processPackString)
+        moduleData = json.loads(moduleDataString)
     except json.JSONDecodeError:
         # TODO: Pass exception up, do not handle here.
         print("Could not load pack string.")
         
-    if not packData is None:    
-        processPackData(worldConfig, packData)
+    if not moduleData is None:    
+        processModuleData(worldConfig, moduleData)
 
 
-def processPackFile(worldConfig, packFile):
-    """Loads JSON Pack Data from a file and processes it."""
+def processModuleFile(worldConfig, moduleFile):
+    """Loads JSON module data from a file and processes it."""
         
     # Assume failure.
-    packData = None
+    moduleData = None
     
     try:
-        packData = json.load(packFile)
+        moduleData = json.load(moduleFile)
     except json.JSONDecodeError:
         # TODO: Pass exception up, do not handle here.
-        print("Error loading pack file:", sys.exc_info()[1])
+        print("Error loading Module File:", sys.exc_info()[1])
         
-    if not packData is None:    
-        processPackData(worldConfig, packData)
+    if not moduleData is None:    
+        processModuleData(worldConfig, moduleData)
 
 
-def main(packFileName):
+def main(moduleFileName):
     # Assume Failure.
-    packFile = None
+    moduleFile = None
     
     # TODO: Get world config when loading.
     worldConfig = {}
     
-    if not packFileName is None and not packFileName == "":
-        # Use passed packFile name.
-        print("Pack File: " + packFileName);print("")
+    if not moduleFileName is None and not moduleFileName == "":
+        # Use passed moduleFile name.
+        print("Module File: " + moduleFileName);print("")
         try:
-            packFile = open(packFileName)
+            moduleFile = open(moduleFileName)
         except:
-            print("Error reading pack file:", sys.exc_info()[1])
+            print("Error reading Module File:", sys.exc_info()[1])
     else:
         # Use stdin if no file name.
-        print("Pack Data from STDIN.");print("")
-        packFile = sys.stdin
+        print("module data from STDIN.");print("")
+        moduleFile = sys.stdin
 
-    if not packFile is None:    
-        processPackFile(worldConfig, packFile)
+    if not moduleFile is None:    
+        processModuleFile(worldConfig, moduleFile)
     
     
 if __name__ == '__main__':
-    # TODO: Support command line arguments for pack file name(s).
-    main("squidhall.pack.json")
-    #main("furniture.pack.json")
+    # TODO: Support command line arguments for Module File name(s).
+    main("squidhall.module.json")
+    #main("furniture.module.json")
