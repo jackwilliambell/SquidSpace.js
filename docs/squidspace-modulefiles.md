@@ -421,6 +421,26 @@ Objects are an array of 3D Object JSON objects specified with the key "objects" 
 
 NOTE: Lights and user cameras are considered a special case of 'Object' and are specified in the Objects section using special Object Loader hooks functions.
 
+TODO: Examples.
+
+### Built-in Object Loaders
+
+SquidSpace.js provides the following 'built in' loader hooks:
+
+* 'default' – A basic object data loader that uses the built-in SquidSpace.loadObject() function, which in turn is based on the Babylon.js SceneLoader.ImportMesh() function
+
+* 'floor' – A basic object builder/loader that uses the SquidSpace.makeFloor() function, which in turn is based on the Babylon.js Mesh.CreateGround() function
+
+* 'user-camera' – A basic object builder/loader that uses the SquidSpace.makeUserCamera() function, which in turn is based on the Babylon.js UniversalCamera() function
+
+* TODO: Other built-in object loader hooks. (floor, light, user camera, plane, basic geometry)
+
+For more details on SquidSpace.js built-in loader functons, including their options and data values, see the [SquidSpace.js API Documentation](squidspace-api.md)
+
+NOTE: One common way to create a custom loader hook is to call a built-in loader function from your hook function and then modify the returned meshes for your specific requirements.
+
+NOTE: The SquidSpace.js squidcommons mod provides a number of other commonly used loaders. 
+TODO: Implement and document squidcommons.js.
 
 ### Object Configuration
 
@@ -430,15 +450,15 @@ Object resources support the Standard Resource Configuration.
 
 Object resources support the Standard Resource Options. Other options are dependent on the loader hook specified.
 
-#### 'default' Loader Options
+#### 'default' Object Loader Options
 
 The following options are specific to the object resource 'default' loader hook; similar custom loader hooks should support these as well, unless the implementation and use case do not require them:
 
 * "visible" – [optional, boolean, default is false] – Specifies that the object is made visible in the space at startup using the object's own position data; otherwise the object is a "layout object" and is made invisible in the space at startup and must be placed into the space using a layout (see also, Area  Layouts below)
 
-* "collision-detection" - [optional, boolean, default is true] – Specifies if collision detection is on for the object. 
+* "collision-detection" - [optional, boolean, default is true] – Specifies if collision detection is on for the object
 
-* "mesh-name-filter" - [optional, string or array of strings] – Specifies one or more submeshes of the object which will be imported; filtering out other submeshes
+* "mesh-name-filter" - [optional, string or array of strings, default is no filter] – Specifies one or more submeshes of the object which will be imported; filtering out other submeshes
 
 * "loader-plugin" – [required if the object file type is not ".babylon", otherwise do not use, string containing a file extension, default is ".babylon"] – Used to specify the Babylon.js object loading plugin to use by file name extension; currently supported loader plugin values include:
 	 - ".obj"
@@ -450,21 +470,63 @@ The following options are specific to the object resource 'default' loader hook;
    - "on-click" – Makes object clickable in the 3D space
    - TODO: Other supported events.
    
-* TODO: Other loadObject() function options.
-	 
-NOTE: The object resource 'default' loader hook uses the SquidsSpace.js loadObject() function. For more details on how it works and what options are supported, see the [SquidSpace.js API Documentation](packfile-specification.md). Because loadObject() already supports the above options, one common way to create a custom loader hook is to call the loadObject() function from your hook function and then modify the returned meshes for your specific requirements.
+* TODO: Other loadObject() function options
 
-TODO: Options for other built-in object loader hooks. (floor, light, user camera, plane, basic geometry)
+#### 'floor' Object Loader Options
+
+The following options are specific to the object resource 'floor' loader hook; similar custom loader hooks should support these as well, unless the implementation and use case do not require them:
+
+* "visible" – [optional, boolean, default is false] – Specifies that the object is made visible in the space at startup using the object's own position data; otherwise the object is a "layout object" and is made invisible in the space at startup and must be placed into the space using a layout (see also, Area  Layouts below)
+
+* "collision-detection" - [optional, boolean, default is true] – Specifies if collision detection is on for the object. 
+
+* "gravity" - [TODO] – Specifies the amount and direction of the floor's gravity
+   
+* TODO: Other loadObject() function options
+
+#### 'user-camera' Object Loader Options
+
+The following options are specific to the object resource 'user-camera' loader hook; similar custom loader hooks should support these as well, unless the implementation and use case do not require them:
+
+* "visible" – [optional, boolean, default is false] – Specifies that the object is made visible in the space at startup using the object's own position data; otherwise the object is a "layout object" and is made invisible in the space at startup and must be placed into the space using a layout (see also, Area  Layouts below)
+
+* "collision-detection" - [optional, boolean, default is true] – Specifies if collision detection is on for the object
+
+* "fly" - [optional, boolean, default is false] – Specifies if the user camera is affected by gravity
+   
+* TODO: Other options
 
 ### Object Data
 
 Object resources supports the Standard Resource Data values. The data should specify all the geometry/meshes for a single object added to the space.
 
-#### 'default' Loader Data 
+#### 'default' Object Loader Data 
 
 The object resource 'default' loader hook supports the Standard Resource Data using configuration "pack-options", where the data is a supported 3D object file type. See Standard Resource Configuration and Standard Resource Options.
    
-TODO: Data for other built-in object loader hooks. (floor, light, user camera, plane, basic geometry)
+#### 'floor' Object Loader Data
+
+The following data values are specific to the object resource 'floor' loader hook; similar custom loader hooks should support these as well, unless the implementation and use case do not require them:
+
+* "size" - [requried, array of x, y, z values] – Specifies the size of the floor
+
+* "position" - [optional, array of x, y, z values, default is 0, 0, 0] – Specifies the NW corner of the floor
+
+* "material" - [optional, material name, default is no material] – Specifies the material to use for the floor
+   
+* TODO: Other data
+   
+#### 'user-camera' Object Loader Data
+
+The following data values are specific to the object resource 'user-camera' loader hook; similar custom loader hooks should support these as well, unless the implementation and use case do not require them:
+
+* "size" - [requried, array of x, y, z values] – Specifies the size of the user camera collision ellipsoid
+
+* "position" - [optional, array of x, y, z values, default is 0, 0, 0] – Specifies the point position of the camera
+
+* "target" - [optional, array of x, y, z values, default is 0, 0, 0] – Specifies the point position of the camera target (what it is looking at)
+   
+* TODO: Other data
 
 ## Mods
 
