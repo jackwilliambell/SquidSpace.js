@@ -1,6 +1,6 @@
 # Module File Specification
 
-Module Files let you specify one or more modulesModule Files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use Module Files to manage asset pipelines and to generate runtime javascript files. The Module File processor and the context the Module File is used in determines what the outputs are and the details of what Module File values are required. (See also, Module File Processors below.)
+Module Files let you specify one or more modules. Module Files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use Module Files to manage asset pipelines and to generate runtime javascript files. The Module File processor and the context the Module File is used in determines what the outputs are and the details of what Module File values are required. (See also, Module File Processors below.)
 
 Module Files are processed by reading them in and using them to generate some output or otherwise to control some work. For example, SquidSpace.js provides tools that use Module Files to manage asset pipelines and generate runtime javascript files. The Module File processor and the context the Module File is used determines what the outputs are and the details of what Module File values are required. (See also, Module File Processors and Code Generation below.)
 
@@ -46,7 +46,7 @@ IMPORTANT! The Module File specification does not specify what named values an o
 
 ## Data
 
-An 'data' value (any type allowed) may appear as a member of any object in a Module File, including at the top level. The purpose of the data object is to contain the data value(s) used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. Data values may be any valid JSON type, although the specific type and how it is are used is dependent both on the Module File processor and the context of the data object within the Module File.
+An 'data' value (any type allowed) may appear as a member of any object in a Module File, including at the top level, unless specified with a specific type below. The purpose of the data object is to contain the data value(s) used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. Data values may be any valid JSON type, although the specific type and how it is are used is dependent both on the Module File processor and the context of the data object within the Module File.
 
 IMPORTANT! The Module File specification does not specify what named values a data object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
@@ -132,9 +132,7 @@ The layouts section of a module is an array containing one or more 'layout areas
 
 4. "options" – [object; optional, but may be required or ignored by some Module File processors] – layout area-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – layout area-specific data (See also, Data above)
-
-6. "object-placements" – [array; required] – a list of object placements in the layout area, described below
+5. "data" – [array; required] – a list of object placements in the layout area, described below
 
 Each object placement consists of a specification for zero to many locations of the same object within the layout area, to be processed by the Module File processor. A object placement consists of the following named objects, although a specific Module File processor may add others:
 
@@ -146,15 +144,11 @@ Each object placement consists of a specification for zero to many locations of 
 
 4. "options" – [object; optional, but may be required or ignored by some Module File processors] – object placement-specific options (See also, Options above)
 
-5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – object placement-specific data (See also, Data above)
-
-6. "placements" – [array; required] – a list of placement commands for the object, described below
+5. "data" – [array; required] – a list of placement commands for the object, described below
 
 IMPORTANT! The Module File specification does not detail configuration, options, and data values for object placements. Please refer to the documentation for the Module File processor you will be using for more information.
 
 Each placement command consists of the following objects:
-
-1. "placer" – [string; required] – the placement algorithm to use
 
 1. "place-name" – [string; required] – A unique name within the Layout Area, used to identify all instances of this placement
 
@@ -167,6 +161,10 @@ Each placement command consists of the following objects:
 5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – placement command-specific data (See also, Data above)
 
 IMPORTANT! The Module File specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the Module File processor you will be using for more information.
+
+## Wiring
+
+TODO: Design. Consider if this should be a SquidSpace.js-only section.
 
 ## Module File Processors
 

@@ -19,7 +19,5 @@ def run(server_class=http.server.HTTPServer, handler_class=MyHTTPRequestHandler)
     httpd = server_class(server_address, handler_class)
     httpd.serve_forever()
     # TODO: Write own interruptable serve forever loop to stop without control-c.
+    print("Starting test server at http://localhost:8080/ – Press control-C to stop.")
 
-if __name__ == '__main__':
-    print("Starting test server. Press control-C to stop.")
-    run()

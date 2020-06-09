@@ -29,7 +29,7 @@ class ResourceAction(Enum):
     
 class ModuleConfiguration(object):
     """Contains a module configuration."""
-    def __init__(self, worldConfigData, moduleConfigData):
+    def __init__(self, defaultConfigData, moduleConfigData):
         """Sets the module configuration to match the passed configuration data."""
         
         # Start by setting defaults
@@ -45,22 +45,22 @@ class ModuleConfiguration(object):
         # use Python dir functions to generate full path. 
         
         # Override with values from passed world configuration, if any.
-        if not worldConfigData is None and isinstance(worldConfigData, dict):
-            if "pretty-print" in worldConfigData:
-                self.pp = worldConfigData["pretty-print"]
-            if "pretty-offset" in worldConfigData:
+        if not defaultConfigData is None and isinstance(defaultConfigData, dict):
+            if "pretty-print" in defaultConfigData:
+                self.pp = defaultConfigData["pretty-print"]
+            if "pretty-offset" in defaultConfigData:
                 # TODO: Verify "pretty-offset" is an integer.
-                self.offset = " " * worldConfigData["pretty-offset"]
-            if "out-dir" in worldConfigData:
-                self.outDir = worldConfigData["out-dir"]
-            if "texture-dir" in worldConfigData:
-                self.texDir = worldConfigData["texture-dir"]
-            if "material-dir" in worldConfigData:
-                self.matDir = worldConfigData["material-dir"]
-            if "object-dir" in worldConfigData:
-                self.objDir = worldConfigData["object-dir"]
-            if "mod-dir" in worldConfigData:
-                self.modDir = worldConfigData["mod-dir"]   
+                self.offset = " " * defaultConfigData["pretty-offset"]
+            if "out-dir" in defaultConfigData:
+                self.outDir = defaultConfigData["out-dir"]
+            if "texture-dir" in defaultConfigData:
+                self.texDir = defaultConfigData["texture-dir"]
+            if "material-dir" in defaultConfigData:
+                self.matDir = defaultConfigData["material-dir"]
+            if "object-dir" in defaultConfigData:
+                self.objDir = defaultConfigData["object-dir"]
+            if "mod-dir" in defaultConfigData:
+                self.modDir = defaultConfigData["mod-dir"]   
                                  
         # Override with values from passed module configuration, if any.
         if not moduleConfigData is None and isinstance(moduleConfigData, dict):
@@ -168,13 +168,13 @@ def insertDict(dict, outFile, modConfig, baseOffset):
     
         
 def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
-    """Adds values based on the passed in resource values and the resource flavor; 
+    """Adds values to the out file based on the passed in resource and the resource flavor; 
     handles data inserts if required."""
     
     # Get resource values.
     name = None # Default.
-    if "name" in elem:
-        name = elem["name"]
+    if "resource-name" in elem:
+        name = elem["resource-name"]
     config = None # Default.
     if "config" in elem:
         config = elem["config"]
@@ -278,15 +278,84 @@ def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
     # Write the suffix. 
     if modConfig.pp: outFile.write("\n" + baseOffset)
     outFile.write("},") 
+
+
+def insertObjectPlacement(elem, outFile, modConfig, baseOffset):
+    """Adds values to the out file based on the passed in object layout placement."""
+    # Get placement values.
+    name = None # Default.
+    if "object" in elem:
+        name = elem["object"]
+    placements = [] # Default is empty list.
+    if "placements" in elem:
+        placements = elem["placements"]
+        
+    # Validate layout values.
+    if not isinstance(name, str) and name != "":
+        raise ValueError("Layout name is required.")
+    if placements != None and not isinstance(placements, list):
+        raise ValueError("Layout object placements must be a JSON array or not provided.")
+    
+    # Write the prefix.
+    if modConfig.pp: outFile.write("\n" + baseOffset)
+    outFile.write(name + ": [") 
+    
+    # Write placements.
+    for placement in placements:
+        insertDict(placement, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+            
+    # Write the suffix. 
+    if modConfig.pp: outFile.write("\n" + baseOffset)
+    outFile.write("],") 
+
+    
+def insertLayoutData(elem, outFile, modConfig, baseOffset):
+    """Adds values to the out file based on the passed in layout."""
+    
+    # Get layout values.
+    name = None # Default.
+    if "layout-name" in elem:
+        name = elem["layout-name"]
+    options = {} # Default is empty dict.
+    if "options" in elem:
+        options = elem["options"]
+    objPlacements = [] # Default is empty list.
+    if "object-placements" in elem:
+        objPlacements = elem["object-placements"]
+        
+    # Validate layout values.
+    if not isinstance(name, str) and name != "":
+        raise ValueError("Layout name is required.")
+    if options != None and not isinstance(options, dict):
+        raise ValueError("Layout options must be a JSON object or not provided.")
+    if objPlacements != None and not isinstance(objPlacements, list):
+        raise ValueError("Layout object placements must be a JSON array or not provided.")
+    
+    # Write the prefix.
+    if modConfig.pp: outFile.write("\n" + baseOffset)
+    outFile.write(name + ": {") 
+
+    # Write options, if present.
+    if options != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"options": ')
+        insertDict(options, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write(",")
+    
+    # Write object placements.
+    if objPlacements != None:
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write('"objectPlacements": {')
+        for objPlacement in objPlacements:
+            insertObjectPlacement(objPlacement, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+        outFile.write("}")
+            
+    # Write the suffix. 
+    if modConfig.pp: outFile.write("\n" + baseOffset)
+    outFile.write("},") 
     
     
-def insertLayoutData(elem, outFile, config, baseOffset):
-    # TODO: Implement something more specific?
-    insertDict(elem, outFile, config, baseOffset)
-    outFile.write(",")
-    
-    
-def processModule(worldConfig, module):
+def processModule(defaultConfig, module):
     """Processes one module's elements and generates a module file."""
     
     # TODO: Improve error handling. Need to decide if we wrap everything in a try-catch or
@@ -294,7 +363,7 @@ def processModule(worldConfig, module):
     
     # DEBUG: Comment out for production.
     #print(module);print("")
-    print("Writing module: " + module["name"]);print("")
+    print("Writing module: " + module["module-name"]);print("")
     
     # Get module configuration.
     moduleConfig = {} # Default config is empty dict.
@@ -302,13 +371,13 @@ def processModule(worldConfig, module):
         moduleConfig = module["config"]
         
     # Create the module processing configuration.
-    modConfig = ModuleConfiguration(worldConfig, moduleConfig)
+    modConfig = ModuleConfiguration(defaultConfig, moduleConfig)
     
     # Open module output file.
-    mf = open(modConfig.outDir + module["name"] + ".js", "w")
+    mf = open(modConfig.outDir + module["module-name"].lower() + ".js", "w")
     
     # Write module start.
-    mf.write("var " + module["name"] + " = (function(){")
+    mf.write("var " + module["module-name"] + " = (function(){")
     if modConfig.pp: mf.write("\n")
         
     # Write module publics.
@@ -360,15 +429,14 @@ def processModule(worldConfig, module):
             mf.write("},")
     
     # Process layouts.
-    # TODO: Fix and uncomment.
-    #if "layouts" in module:
-    #    if modConfig.pp: mf.write("\n" + baseOffset)
-    #    mf.write("layouts: {")
-    #    for layout in module["layouts"]:
-    #        if modConfig.pp: mf.write("\n" + baseOffset + offset)
-    #        insertLayoutData(layout, mf, config, baseOffset + modConfig.offset)
-    #    if modConfig.pp: mf.write("\n" + baseOffset)
-    #    mf.write("}")
+    if "layouts" in module:
+        if modConfig.pp: mf.write("\n" + baseOffset)
+        mf.write("layouts: {")
+        for layout in module["layouts"]:
+            if modConfig.pp: mf.write("\n" + baseOffset +  modConfig.offset)
+            insertLayoutData(layout, mf, modConfig, baseOffset + modConfig.offset)
+        if modConfig.pp: mf.write("\n" + baseOffset)
+        mf.write("}")
     
     # Write module end.
     if modConfig.pp: mf.write("\n" + modConfig.offset)
@@ -380,7 +448,7 @@ def processModule(worldConfig, module):
     mf.close()
     
     
-def processModuleData(worldConfig, moduleData):
+def processModuleData(defaultConfig, moduleData):
     """Processes the Module Data to generate a module file."""
     # TODO: Document module data.
     
@@ -389,13 +457,13 @@ def processModuleData(worldConfig, moduleData):
     #print(moduleData);print("")
                 
     # Write Module.
-    processModule(worldConfig, moduleData)
+    processModule(defaultConfig, moduleData)
 
     # DEBUG: Comment out for production.
     print("Processing complete.");print("")
 
 
-def processModuleString(worldConfig, moduleDataString):
+def processModuleString(defaultConfig, moduleDataString):
     """Loads JSON Module Data from a string and processes it."""
 
     # Assume failure.
@@ -408,10 +476,10 @@ def processModuleString(worldConfig, moduleDataString):
         print("Could not load pack string.")
         
     if not moduleData is None:    
-        processModuleData(worldConfig, moduleData)
+        processModuleData(defaultConfig, moduleData)
 
 
-def processModuleFile(worldConfig, moduleFile):
+def processModuleFile(defaultConfig, moduleFile):
     """Loads JSON module data from a file and processes it."""
         
     # Assume failure.
@@ -424,33 +492,30 @@ def processModuleFile(worldConfig, moduleFile):
         print("Error loading Module File:", sys.exc_info()[1])
         
     if not moduleData is None:    
-        processModuleData(worldConfig, moduleData)
+        processModuleData(defaultConfig, moduleData)
 
 
-def main(moduleFileName):
+def runMake(defaultConfig, moduleFileNames):
     # Assume Failure.
     moduleFile = None
-    
-    # TODO: Get world config when loading.
-    worldConfig = {}
-    
-    if not moduleFileName is None and not moduleFileName == "":
-        # Use passed moduleFile name.
-        print("Module File: " + moduleFileName);print("")
-        try:
-            moduleFile = open(moduleFileName)
-        except:
-            print("Error reading Module File:", sys.exc_info()[1])
-    else:
-        # Use stdin if no file name.
-        print("module data from STDIN.");print("")
-        moduleFile = sys.stdin
 
-    if not moduleFile is None:    
-        processModuleFile(worldConfig, moduleFile)
+    # We expect to process a list of file names.
+    if not isinstance(moduleFileNames, list):
+        moduleFileNames = [moduleFileNames] # Force list.
+        
+    for moduleFileName in moduleFileNames:
+        if not moduleFileName is None and not moduleFileName == "":
+            # Use passed Module File name.
+            print("Module File: " + moduleFileName);print("")
+            try:
+                moduleFile = open(moduleFileName)
+            except:
+                print("Error reading Module File:", sys.exc_info()[1])
+        else:
+            # Use stdin if no file name.
+            print("Reading module data from STDIN.");print("")
+            moduleFile = sys.stdin
+
+        if not moduleFile is None:    
+            processModuleFile(defaultConfig, moduleFile)
     
-    
-if __name__ == '__main__':
-    # TODO: Support command line arguments for Module File name(s).
-    main("squidhall.module.json")
-    #main("furniture.module.json")
