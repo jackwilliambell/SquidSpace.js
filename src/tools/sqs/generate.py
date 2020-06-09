@@ -1,10 +1,17 @@
-#!/usr/bin/env python3
-"""Reads in a 'pack' file containing JSON data and, using that data, generates
-a Javascript module.
+"""                ====== SquidSpace.js Generate ======
+The SquidSpace.js 'generate' command reads in a 'module' file containing JSON data meeting the 
+Module File Specification using the SquidSpace.js Module File extensions. Then, using 
+that data, it generates a Javascript module containing the everything specified in the module
+file, including external data files 'packed' into the Javascript module.
 
-SquidSpace, the associated tooling, and the documentation are copyright Jack William Bell 2020. 
-All other content, including HTML files and 3D assets, are copyright their respective
-authors."""
+For more information on Module Files and SquidSpace.js, please refer to the documentation 
+located in the project repo at https://github.com/jackwilliambell/SquidSpace.js"""
+
+
+copyright = """SquidSpace.js, the associated tooling, and the documentation are copyright 
+Jack William Bell 2020 except where noted. All other content, including HTML files and 3D 
+assets, are copyright their respective authors."""
+
 
 import sys
 import os
@@ -495,7 +502,7 @@ def processModuleFile(defaultConfig, moduleFile):
         processModuleData(defaultConfig, moduleData)
 
 
-def runMake(defaultConfig, moduleFileNames):
+def runGenerate(defaultConfig, moduleFileNames):
     # Assume Failure.
     moduleFile = None
 

@@ -17,8 +17,12 @@ A Module File consists of JSON data containing one or more of the following name
 3. "options" – [object; optional, but may be required or ignored by some Module File processors] – global options for the entire file (See also, Options below)
 
 4. "data" – [any type; optional, but may be required or ignored by some Module File processors] – global data for the entire file (See also, Data below)
-	 
-5. "modules" – [array; optional, but may be required or ignored by some Module File processors] – a specification for each module to be generated (see also, Modules below)
+
+5. "resources" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the resources in the module (see also, Resources below)
+
+6. "layouts" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the layouts in the module (see also, Layouts below)
+
+7. "wiring" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the wiring in the module (see also, Wiring below)
 
 Module File example:
 
@@ -52,7 +56,11 @@ IMPORTANT! The Module File specification does not specify what named values a da
 
 ## Special Value Types
 
-Module Files support some special value types that extend JSON to allow 
+Module Files support some special value types that extend JSON. These include:
+
+* Expression Strings
+
+* Binary Strings.
 
 ### Expression Strings ($=)
 
@@ -80,27 +88,7 @@ WARNING: Binary Strings can result in runtime failures if they are not valid Bas
 
 TODO: Example
 
-## Modules
-
-The module section of a Module File is an array of one or more modules to process. Each module item consists of a specification for a single module. A module specification consists of JSON data containing the following named objects, although a specific Module File processor may add others:
-
-1. "name" – [string; required] – the name of the module, should be unique within the module array 
-
-2. "doc" – [string; optional] – documentation for the module, use to describe what the module is for 
-
-3. "config" – [object; optional, but may be required or ignored by some Module File processors] – module-wide configuration (See also, Configuation above)
-
-4. "options" – [object; optional, but may be required or ignored by some Module File processors] – module-wide options (See also, Options above)
-
-5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – module-wide data (See also, Data above)
-	 
-6. "resources" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the resources in the module (see also, Resources below)
-	 
-7. "layouts" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the layouts in the module (see also, Layouts below)
-	 
-8. "wiring" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the wiring in the module (see also, Wiring below)
-
-### Module Resources
+## Resources Section
 
 The resources section of a module is an object containing of one or more uniquely named 'resource types' to include in the output. There can be zero or more resource types. Resource types include, but are not limited to, things like object geometry, texture data, material descriptions and so on. The Module File processor determines which resource types are supported. Each resource type contains an array of 'resource items'. Resource items are descrbed below.
 
@@ -120,7 +108,7 @@ Each resource item consists of a specification for a single resource to be proce
 
 IMPORTANT! The Module File specification does not detail configuration, options, and data values for resource items. Please refer to the documentation for the Module File processor you will be using for more information.
 
-## Layouts
+## Layouts Section
 
 The layouts section of a module is an array containing one or more 'layout areas' to include in the output. There can be zero or more layout areas. Layout areas specify an area and contain a layout specification for the objects in that area. A layout area consists of the following named objects, although a specific Module File processor may add others:
 
@@ -162,7 +150,7 @@ Each placement command consists of the following objects:
 
 IMPORTANT! The Module File specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the Module File processor you will be using for more information.
 
-## Wiring
+## Wiring Section
 
 TODO: Design. Consider if this should be a SquidSpace.js-only section.
 
