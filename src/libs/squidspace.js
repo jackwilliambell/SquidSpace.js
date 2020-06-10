@@ -85,7 +85,7 @@ var SquidSpace = function() {
 		}
 	};
 	var objectLoaderHooks = {
-		"default": function(objName, options, data, scene) {
+		"object": function(objName, options, data, scene) {
 			return SquidSpace.loadObject(objName, options, data, scene, null, null, false);
 		},
 		"floor": function(objName, options, data, scene) {
@@ -121,12 +121,77 @@ var SquidSpace = function() {
 							targetPos[0], targetPos[1], targetPos[2], scene);
 		}
 	};
+	objectLoaderHooks["default"] = objectLoaderHooks["object"]
 	var modLoaderHooks = {
-		"default": function(modName, options, data, scene) {
+		"default": function(matName, options, data, scene) {
 			//return: object instance or undefined if object could not be loaded
 		}
 	};
-	var objectPlacerHooks = {};
+	var objectPlacerHooks = {
+		"single": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle areaOptions as needed. 
+			
+			// Get values.
+			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let rotation = getValIfKeyInDict("rotation", data, [0, 0, 0]);
+			let plc = [];
+			
+			// TODO: Placements currently do not include 'y' and only rotate on y axis.
+			SquidSpace.addSingleInstanceToPlacements(placeName, plc, position[0], position[2], rotation[1]);
+
+			if (plc.length > 0) {
+				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				return true;
+			}
+			
+			return false;
+		},
+		"linear-series": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle areaOptions as needed. 
+			
+			// Get values.
+			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let rotation = getValIfKeyInDict("rotation", data, [0, 0, 0]);
+			let count = getValIfKeyInDict("count", data, 1);
+			let across = getValIfKeyInDict("across", data, true);
+			let offset = getValIfKeyInDict("offset", data, 0);
+			let plc = [];
+			
+			// TODO: Placements currently do not include 'y' and only rotate on y axis.
+			SquidSpace.addLinearSeriesToPlacements(placeName, plc, count, position[0], position[2], 
+				offset, across, rotation[1]);
+			
+			if (plc.length > 0) {
+				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				return true;
+			}
+			
+			return false;
+		},
+		"rectangle-series": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle areaOptions as needed. 
+			
+			// Get values.
+			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
+			let countWide = getValIfKeyInDict("countWide", data, 1);
+			let countDeep = getValIfKeyInDict("countDeep", data, 1);
+			let lengthOffset = getValIfKeyInDict("lengthOffset", data, 0);
+			let widthOffset = getValIfKeyInDict("widthOffset", data, 0);
+			let plc = [];
+			
+			// TODO: Placements currently do not include 'y' and only rotate on y axis.
+			SquidSpace.addRectangleSeriesToPlacements(placeName, plc, countWide, countDeep, 
+				position[0], position[2], lengthOffset, widthOffset);
+			
+			if (plc.length > 0) {
+				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				return true;
+			}
+		
+			return false;
+		}
+	};
+	objectPlacerHooks["default"] = objectPlacerHooks["single"]
 	var userModeHooks = {};
 	
 	//
@@ -160,6 +225,8 @@ var SquidSpace = function() {
 		// run into use cases where there are inter-object depedencies we'll need to
 		// control order as well.
 		for (key in loaderSpecs) {
+			SquidSpace.logDebug(`processLoaders(): ${key} loader.`);
+			
 			// Get working values.
 			let options = getValIfKeyInDict("options", loaderSpecs[key], {});
 			let data = getValIfKeyInDict("data", loaderSpecs[key], undefined);
@@ -169,6 +236,7 @@ var SquidSpace = function() {
 			// Do we have a loader?
 			if (typeof loader === "function") {
 				// Load it!
+				// TODO: Try/Catch and error handling.
 				let result = loader(key, options, data, scene);
 				
 				// Do we have a result?
@@ -181,88 +249,73 @@ var SquidSpace = function() {
 				}
 			}
 			else {
-				SquidSpace.logError(`No ${loaderTypeName} loader hook named ''${loaderName}''.`);
+				SquidSpace.logError(`processLoaders(): No ${loaderTypeName} loader hook named '${loaderName}'.`);
 			}
 		}
 	}
 	
-	var processLayouts = function(layoutsList, scene) {
-		for (layout of layoutsList) {
-			let areaName = getValIfKeyInDict("area", layout, "");
-			let areaOrigin = getValIfKeyInDict("origin", layout, [0,0,0]);
-			let config = undefined;
-			if (typeof layout["config"] === "object") {
-				config = layout["config"];
-			}
+	var processLayouts = function(layoutsSpecs, scene) {
+		// Process all the layouts. This does not define processing order, so if we 
+		// run into use cases where there are inter-layout depedencies we'll need to
+		// control order as well.
+		for (key in layoutsSpecs) {
+			SquidSpace.logDebug(`processLayouts(): ${key} area.`);
 
-			SquidSpace.logDebug(`processLayouts: ${areaName}`);
-			
-			for (placement of layout["object-placements"]) {
-				let placeName =  getValIfKeyInDict("name", placement, "");
-				let placer = getValIfKeyInDict("placer", placement, "");
-				let objName = getValIfKeyInDict("object", placement, "");
-				let data = getValIfKeyInDict("data", placement, {});
-				
-				SquidSpace.logDebug(`processLayouts placement: ${placeName}/${placer}/${objName}`);
-				
-				// Do we have a valid object name?
-				if (objName in objects || objName === "_none_") {
-					
-					// Is the placer hooked?
-					if (placer in objectPlacerHooks) {
-						// Try to get the meshes.
-						let meshes = SquidSpace.getLoadedObjectMeshes(objName);
-						// TODO: Wrap with try/catch.
-						objectPlacerHooks[placer](areaName, areaOrigin, config, placeName, 
-											data, objName, meshes, scene);
+			// Get working values.
+			let areaOptions = getValIfKeyInDict("options", layoutsSpecs[key], {});
+			let objPlacements = getValIfKeyInDict("objectPlacements", layoutsSpecs[key], []);
+
+			// TODO: Handle area layout options. (Currently ignoring them.) Things to do:
+			// 1. Save area and provide a get function
+			// 2. Rework options adding default values if needed
+			// 3. Come up with more options
+
+			// Process the object placements.
+			for (placement of objPlacements) {
+				// Get working values.
+				let objectName = getValIfKeyInDict("object", placement, undefined);
+				let placers = getValIfKeyInDict("placers", placement, []);
+
+				// Do we have an object name?
+				if (typeof objectName === "string") {
+					SquidSpace.logDebug(`processLayouts(): ${objectName} object.`);
+
+					// Process the placers.
+					for (placer of placers) {
+						// Get working values.
+						let options = getValIfKeyInDict("options", placer, {});
+						let data = getValIfKeyInDict("data", placer, {});
+						let placeName = getValIfKeyInDict("place-name", options, undefined);
+						let placerName = getValIfKeyInDict("placer", options, "default");
+						let placerFunc = getValIfKeyInDict(placerName, objectPlacerHooks, undefined);
+
+						// do we have a place name?
+						if (typeof placeName === "string") {
+							// Do we have a placer?
+							if (typeof placerFunc === "function") {
+								// Place it!
+								// TODO: Try/Catch and error handling.
+								let result = placerFunc(key, areaOptions, objectName, placeName,
+									options, data, scene);
+
+								// Do we have a result?
+								if (!result) {
+									SquidSpace.logError(
+										`processLayouts(): Placer Hook function ${placerName} for ${placeName} of ${objectName} in ${key} area failed.`);
+								}
+							} else {
+								SquidSpace.logError(
+									`processLayouts(): No placer hook named '${placerName}'.`);
+							}
+						} else {
+							SquidSpace.logError(
+								`processLayouts(): Placement without a valid place name for ${objectName} in ${key} area.`);
+						}
 					}
-					else {
-						// TODO: Consider making these 'builtin hooks' that
-						//       can be overridden.
-						let position = getValIfKeyInDict("position", data, 0);
-						let rotation = norot;
-						if (getValIfKeyInDict("rotation", data, false)) {
-							rotation = rot;
-						}
-   						let plc = [];
-	   					if (placer == "linear-series") {
-							let count = getValIfKeyInDict("count", data, 1);
-							let across = getValIfKeyInDict("across", data, true);
-							let offset = getValIfKeyInDict("offset", data, 0);
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addLinearSeriesToPlacements(
-	   							placeName, plc, count, position[0], position[2], 
-								offset, across, rotation);
-	   					}
-	   					else if (placer == "rectangle-series") {
-							let countWide = getValIfKeyInDict("countWide", data, 1);
-							let countDeep = getValIfKeyInDict("countDeep", data, 1);
-							let lengthOffset = getValIfKeyInDict("lengthOffset", data, 0);
-							let widthOffset = getValIfKeyInDict("widthOffset", data, 0);
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addRectangleSeriesToPlacements(
-								placeName, plc, countWide, countDeep, position[0], position[2], 
-								lengthOffset, widthOffset);
-	   					}
-	   					else if (placer == "single") {
-							// TODO: Placements currently do not include 'y'.
-	   						SquidSpace.addSingleInstanceToPlacements(
-								placeName, plc, position[0], position[2], rotation);
-	   					}
-	   					else {
-							// TODO: Throw exception or otherwise handle. (Log?)
-	   					}
-						
-						SquidSpace.logDebug(`processLayouts placer count: ${plc.length}`);
-						
-						if (plc.length > 0) {
-							SquidSpace.placeObjectInstances(objName, plc, undefined, scene);
-						}
-					}					
+				} else {
+					SquidSpace.logError(
+						`processLayouts(): Placement without a valid object name in ${key} area.`);
 				}
-				else {
-					// TODO: Throw exception or otherwise handle. (Log?)
-				}					
 			}
 		}
 	}
@@ -808,10 +861,10 @@ var SquidSpace = function() {
 			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLevel)) {
 				// Set the log level.
 				logLevel = logLevel;
-				logDebug(`Setting log level: ${logLevel}`);
+				SquidSpace.logDebug(`setLogLevel(): Setting log level to ${logLevel}.`);
 			}
 			else {
-				logError(`Invalid log level: ${logLevel} - could not set`);
+				SquidSpace.logError(`setLogLevel(): Invalid log level: ${logLevel} - could not set.`);
 				// TODO: Throw exception?
 			}
 		},
@@ -885,6 +938,8 @@ var SquidSpace = function() {
 			return oldHook;
 		},
 		
+		// TODO: Loader hooks for textures and materials.
+		
 	 	/** ObjectLoaderHooks are called by name during object loading to create new 
 			instances of complex or custom objects.
 	
@@ -898,10 +953,9 @@ var SquidSpace = function() {
 	
 	 	/** ObjectPlacerHooks are called by name during layout processing to perform complex
 		    or custom object placements.
-		
-			TODO: Fix this signature!
-		    Signature: hookFunction(areaName, areaOrigin, config, placeName, data, 
-		                            objName, meshes, scene) {return: boolean}
+	
+		    Signature: hookFunction(areaName, areaOptions, objectName, placeName, 
+		                            options, data, scene) {return: boolean}
 		 */
 		attachObjectPlacerHook: function(hookName, hookFunction) {
 			let oldHook = objectPlacerHooks[hookName];
@@ -916,7 +970,7 @@ var SquidSpace = function() {
 			The SquidSpace.js SquidDebug mod adds 'debug', 'debug-inspect' and 
 			'inspect' user modes.
 		
-			The SquidSpace.js SquidWalkthrough mod adds 'walk' and 'run' user modes.
+			The SquidSpace.js SquidWalkthrough mod adds 'fly', 'walk' and 'run' user modes.
 		
 			NOTE: The user camera is set up as an object during worldBuild() processing. Some 
 			user cameras may not be compatable with particular user modes. 
@@ -993,7 +1047,7 @@ var SquidSpace = function() {
 		getUserCamera: function() {
 			return objects["userCamera"];
 		},
-				
+		
 		/** Sets the user mode to the passed mode using the passed options 
 			and data. There must be a user mode hook with the mode name. Returns
 			false if the user mode is not available, otherwise returns the 
@@ -1100,27 +1154,35 @@ var SquidSpace = function() {
 			}
 			
 			// Load resources from specs using a specific order to avoid dependency issues.
-			processLoaders(getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, scene, "mods");
+			processLoaders(getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, 
+							scene, "mods");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("mods", spec, {}), modLoaderHooks, scene, "mods");
+				processLoaders(getValIfKeyInDict("mods", spec, {}), modLoaderHooks, 
+								scene, "mods");
 			}
-			processLoaders(getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, scene, "textures");
+			processLoaders(getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, 
+							scene, "textures");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, scene, "textures");
+				processLoaders(getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, 
+								scene, "textures");
 			}
-			processLoaders(getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, scene, "materials");
+			processLoaders(getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, 
+							scene, "materials");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, scene, "materials");
+				processLoaders(getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, 
+								scene, "materials");
 			}
-			processLoaders(getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, scene, "objects");
+			processLoaders(getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, 
+							scene, "objects");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, scene, "objects");
+				processLoaders(getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, 
+								scene, "objects");
 			}
 			
 			// Process layouts from specs.
-			processLayouts(getValIfKeyInDict("layouts", worldSpec, []), scene);
+			processLayouts(getValIfKeyInDict("layouts", worldSpec, {}), scene);
 			for (spec of contentSpecs) {
-				processLayouts(getValIfKeyInDict("layouts", spec, []), scene);
+				processLayouts(getValIfKeyInDict("layouts", spec, {}), scene);
 			}
 
 			

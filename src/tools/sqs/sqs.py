@@ -9,15 +9,17 @@ is 'sqs.py command <what> [options ...]'. The commands are:
 * package  - Performs a build and creates a distributable package specified 
              with a build.json file
 * filter   - Based on the file extension and configuration, runs a resource file 
-             through a pre-built filtering function
-* pipeline - Processes the asset pipeline specified in a module.json input file
+             through zero to many a pre-built filtering functions; file input and
+             output locations are configurable
+* pipeline - Processes the asset pipeline specified by a module.json input file,
+             including resource filtering and cacheing
 * scaffold - Creates a new SquidSpace.js project directory with default content
 * serve    - Starts a test web server, 'ctrl-c' to exit
-* explain  - Provides a more detailed explanation of a command
+* explain  - Explains a commond in more detail.
 
 In most cases a separate 'config' module.json file provides the default configuraton
 used by the command. When the command is processing a file containing it's own 
-configuraton the local configuraton can override any values in the default 
+configuraton, the local configuraton can override any values in the default 
 configuration. If a default configuration is not specified and the working directory 
 contains a file named 'world.module.json', that file is automatically used for the 
 default configuration. If you do not want to use the world file for the default,
@@ -26,8 +28,8 @@ make certain to specify a different configuration file.
 Commands that process files will attempt to fall back to STDIN if no file name is 
 specified, allowing the command to be used with pipes. Mulitple file names are 
 supported. (For example, 'foo.module.json bar.module.json' to process two files.) 
-File globbing is also supported. (For example, '*.module.json' to process all 
-module files in the current directory.) 
+Shell file globbing is also supported. (For example, '*.module.json' to process  
+all module files in the current directory.) 
 
 Usage:
   sqs.py generate <file>... [--config=<cfg>] [--dir=<path>]
@@ -55,11 +57,12 @@ Jack William Bell 2020 except where noted. All other content, including HTML fil
 assets, are copyright their respective authors."""
 
 
+from os import chdir, path
+import sys
+import json
 from docopt import docopt
-from os import chdir
 from generate import runGenerate, __doc__ as generateDoc
 from serve import runServer, __doc__ as serveDoc
-
 
 ver = "sqs v0.0"
 
@@ -75,14 +78,31 @@ if __name__ == '__main__':
         # TODO: Error handling.
         chdir(arguments['--dir'])
     
-    # Get world file configuration.
-    worldConfig = {}
-    # TODO: Implement
+    # Get default configuration.
+    # TODO: Determine fall-through defaults. (Defaults of the defaults?)
+    defaultConfig = {} 
+    configFileName = arguments['--config']
+    argFileName = True
+    if configFileName == None:
+        configFileName = "world.module.json"    
+        argFileName = False
+    if path.isfile(configFileName):
+        try:
+            configFile = open(configFileName)
+            defaultConfig = json.load(configFile)["config"]
+            # Debug.
+            #print(defaultConfig)
+        except json.JSONDecodeError:
+            print("Error loading Configuration Module File:", sys.exc_info()[1])
+            sys.exit(1)
+    elif argFileName:
+        print("Error loading Configuration Module File: '" + configFileName + "' does not exist.")
+        sys.exit(1)
     
     # Process command.
     # TODO: Error handling.
     if arguments['generate']:
-        runGenerate(worldConfig, arguments['<file>'])
+        runGenerate(defaultConfig, arguments['<file>'])
     elif arguments['build']:
         print("Command 'build' not yet implemented.")
     elif arguments['package']:
@@ -103,7 +123,7 @@ if __name__ == '__main__':
             print(serveDoc)
         else:
             print("No valid command supplied. Try 'sqs.py -h'.")
+            sys.exit(1)
     else:
         print("No valid command supplied. Try 'sqs.py -h'.")
-    
-    
+        sys.exit(1)

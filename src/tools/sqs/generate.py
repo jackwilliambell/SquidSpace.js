@@ -1,6 +1,6 @@
 """                ====== SquidSpace.js Generate ======
 The SquidSpace.js 'generate' command reads in a 'module' file containing JSON data meeting the 
-Module File Specification using the SquidSpace.js Module File extensions. Then, using 
+Module File Specification and using the SquidSpace.js Module File extensions. Then, with 
 that data, it generates a Javascript module containing the everything specified in the module
 file, including external data files 'packed' into the Javascript module.
 
@@ -287,35 +287,6 @@ def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
     outFile.write("},") 
 
 
-def insertObjectPlacement(elem, outFile, modConfig, baseOffset):
-    """Adds values to the out file based on the passed in object layout placement."""
-    # Get placement values.
-    name = None # Default.
-    if "object" in elem:
-        name = elem["object"]
-    placements = [] # Default is empty list.
-    if "placements" in elem:
-        placements = elem["placements"]
-        
-    # Validate layout values.
-    if not isinstance(name, str) and name != "":
-        raise ValueError("Layout name is required.")
-    if placements != None and not isinstance(placements, list):
-        raise ValueError("Layout object placements must be a JSON array or not provided.")
-    
-    # Write the prefix.
-    if modConfig.pp: outFile.write("\n" + baseOffset)
-    outFile.write(name + ": [") 
-    
-    # Write placements.
-    for placement in placements:
-        insertDict(placement, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
-            
-    # Write the suffix. 
-    if modConfig.pp: outFile.write("\n" + baseOffset)
-    outFile.write("],") 
-
-    
 def insertLayoutData(elem, outFile, modConfig, baseOffset):
     """Adds values to the out file based on the passed in layout."""
     
@@ -327,8 +298,8 @@ def insertLayoutData(elem, outFile, modConfig, baseOffset):
     if "options" in elem:
         options = elem["options"]
     objPlacements = [] # Default is empty list.
-    if "object-placements" in elem:
-        objPlacements = elem["object-placements"]
+    if "data" in elem:
+        objPlacements = elem["data"]
         
     # Validate layout values.
     if not isinstance(name, str) and name != "":
@@ -340,22 +311,25 @@ def insertLayoutData(elem, outFile, modConfig, baseOffset):
     
     # Write the prefix.
     if modConfig.pp: outFile.write("\n" + baseOffset)
-    outFile.write(name + ": {") 
+    outFile.write('"' + name+ '": {') 
 
     # Write options, if present.
     if options != None:
-        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
         outFile.write('"options": ')
-        insertDict(options, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+        insertDict(options, outFile, modConfig, baseOffset + modConfig.offset)
         outFile.write(",")
     
-    # Write object placements.
+    # Write object placements, if present.
     if objPlacements != None:
-        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
-        outFile.write('"objectPlacements": {')
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
+        outFile.write('"objectPlacements": [')
         for objPlacement in objPlacements:
-            insertObjectPlacement(objPlacement, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
-        outFile.write("}")
+            if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+            insertDict(objPlacement, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+            outFile.write(",")
+        if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
+        outFile.write("]")
             
     # Write the suffix. 
     if modConfig.pp: outFile.write("\n" + baseOffset)
