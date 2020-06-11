@@ -335,6 +335,24 @@ def insertLayoutData(elem, outFile, modConfig, baseOffset):
     if modConfig.pp: outFile.write("\n" + baseOffset)
     outFile.write("},") 
     
+
+def insertEventsData(elem, outFile, modConfig, baseOffset):
+     """Adds values to the out file based on the passed in layout."""
+        
+     # Write events placements, if present.
+     if elem != None:
+         if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
+         outFile.write('"events": [')
+         for event in elem:
+             if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset + modConfig.offset)
+             insertDict(event, outFile, modConfig, baseOffset + modConfig.offset + modConfig.offset)
+             outFile.write(",")
+         if modConfig.pp: outFile.write("\n" + baseOffset + modConfig.offset)
+         outFile.write("]")
+            
+     # Write the suffix. 
+     if modConfig.pp: outFile.write("\n" + baseOffset)
+     outFile.write("},") 
     
 def processModule(defaultConfig, module):
     """Processes one module's elements and generates a module file."""

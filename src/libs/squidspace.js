@@ -85,7 +85,7 @@ var SquidSpace = function() {
 		}
 	};
 	var objectLoaderHooks = {
-		"object": function(objName, options, data, scene) {
+		"objectData": function(objName, options, data, scene) {
 			return SquidSpace.loadObject(objName, options, data, scene, null, null, false);
 		},
 		"floor": function(objName, options, data, scene) {
@@ -121,7 +121,7 @@ var SquidSpace = function() {
 							targetPos[0], targetPos[1], targetPos[2], scene);
 		}
 	};
-	objectLoaderHooks["default"] = objectLoaderHooks["object"]
+	objectLoaderHooks["default"] = objectLoaderHooks["objectData"]
 	var modLoaderHooks = {
 		"default": function(matName, options, data, scene) {
 			//return: object instance or undefined if object could not be loaded
@@ -224,14 +224,14 @@ var SquidSpace = function() {
 		// Process all the objects. This does not define processing order, so if we 
 		// run into use cases where there are inter-object depedencies we'll need to
 		// control order as well.
-		for (key in loaderSpecs) {
-			SquidSpace.logDebug(`processLoaders(): ${key} loader.`);
-			
+		for (key in loaderSpecs) {			
 			// Get working values.
 			let options = getValIfKeyInDict("options", loaderSpecs[key], {});
 			let data = getValIfKeyInDict("data", loaderSpecs[key], undefined);
 			let loaderName = getValIfKeyInDict("loader", options, "default");
 			let loader = getValIfKeyInDict(loaderName, loaderHooks, undefined);
+			
+			SquidSpace.logDebug(`processLoaders(): ${key} spec / ${loaderName} loader.`);
 			
 			// Do we have a loader?
 			if (typeof loader === "function") {
@@ -243,6 +243,8 @@ var SquidSpace = function() {
 				if (result != undefined) {
 					// Append the options.
 					result.options = options;
+					
+					// TODO: Event processing.
 					
 					// Save the object for later.
 					SquidSpace.addObjectInstance(key, result);
@@ -278,28 +280,32 @@ var SquidSpace = function() {
 
 				// Do we have an object name?
 				if (typeof objectName === "string") {
-					SquidSpace.logDebug(`processLayouts(): ${objectName} object.`);
+					SquidSpace.logDebug(`processLayouts(): ${key} area / ${objectName} object.`);
 
 					// Process the placers.
 					for (placer of placers) {
 						// Get working values.
 						let options = getValIfKeyInDict("options", placer, {});
 						let data = getValIfKeyInDict("data", placer, {});
-						let placeName = getValIfKeyInDict("place-name", options, undefined);
+						let placeName = getValIfKeyInDict("place-name", placer, undefined);
 						let placerName = getValIfKeyInDict("placer", options, "default");
 						let placerFunc = getValIfKeyInDict(placerName, objectPlacerHooks, undefined);
 
 						// do we have a place name?
 						if (typeof placeName === "string") {
+							SquidSpace.logDebug(
+								`processLayouts(): ${key} area / ${objectName} object / ${placeName} place / ${placerName} placer.`);
 							// Do we have a placer?
 							if (typeof placerFunc === "function") {
 								// Place it!
 								// TODO: Try/Catch and error handling.
 								let result = placerFunc(key, areaOptions, objectName, placeName,
 									options, data, scene);
-
+					
 								// Do we have a result?
-								if (!result) {
+								if (result) {
+									// TODO: Event processing.
+								} else {
 									SquidSpace.logError(
 										`processLayouts(): Placer Hook function ${placerName} for ${placeName} of ${objectName} in ${key} area failed.`);
 								}
@@ -435,12 +441,14 @@ var SquidSpace = function() {
 		//
 		// Public helper functions.
 		//
-
+		
 		/** Returns an array of points in the form [x, y, z], where the points are 
 		    calculated from the passed points using the following rules:
 
 			1. x and z are normalized from the floor origin point, located in the 
 		       NW corner of the floor
+		
+			TODO: Add origin argument, which if undefined defaults to floor origin.
 		 */
 		makePointXYX: function(x, y, z) {
 			// TODO: This function was created because I don't understand how Babylon
@@ -465,6 +473,8 @@ var SquidSpace = function() {
 		
 			2. x and z are further normalized to the NW corner of the rectangle 
 		       specified by w and d
+		
+			TODO: Add origin argument, which if undefined defaults to floor origin.
 		 */
 		makeLayoutXYZ: function(x, y, z, w, d) {
 			// TODO: This function was created because I don't understand how Babylon
@@ -487,6 +497,8 @@ var SquidSpace = function() {
 	
 			1. x and z are normalized from the floor origin point, located in the 
 		       NW corner of the floor
+		
+			TODO: Add origin argument, which if undefined defaults to floor origin.
 		 */
 		makePointVector: function(x, y, z) {
 			// TODO: This function was created because I don't understand how Babylon
@@ -512,6 +524,8 @@ var SquidSpace = function() {
 	
 			2. x and z are further normalized to the NW corner of the rectangle 
 		       specified by w and d
+		
+			TODO: Add origin argument, which if undefined defaults to floor origin.
 		 */
 		makeLayoutVector: function(x, y, z, w, d) {
 			// TODO: This function was created because I don't understand how Babylon
@@ -710,32 +724,6 @@ var SquidSpace = function() {
 		},
 
 		//
-		// Light management functions.
-		//
-		// TODO: More.
-		//
-		
-		addLightInstance: function(ltName, light) {		
-			// TODO: Check if ltName already exists. Decide how to handle. (Error?)
-			
-			// Keep a local reference to the texture.
-			lights[ltName] = light;
-		},
-		
-		/** Returns the light for the passed light name, assuming the light was 
-			specified in the pack file, loaded with the loadLight(),
-			or added with the addLightInstance() function. If the light is available it 
-			is returned. If it was not it returns 'undefined'. 
-		*/
-		getLight: function(ltName) {
-			if (ltName in lights) {
-				return lights[ltName];
-			}
-			
-			return undefined;
-		},
-
-		//
 		// Layout helper functions.
 		//
 	
@@ -856,11 +844,11 @@ var SquidSpace = function() {
 		//
 		
 		/** Sets the current log level to the passed level, if valid. */
-		setLogLevel: function(logLevel) {
+		setLogLevel: function(logLvl) {
 			// Is it a valid log level?
-			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLevel)) {
+			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLvl)) {
 				// Set the log level.
-				logLevel = logLevel;
+				logLevel = logLvl;
 				SquidSpace.logDebug(`setLogLevel(): Setting log level to ${logLevel}.`);
 			}
 			else {
@@ -872,28 +860,28 @@ var SquidSpace = function() {
 		/** Logs a debug-level message. */
 		logDebug: function(message) {
 			if (logLevel <= SS_LOG_DEBUG) {
-				logHook("[DEBUG] " + message)
+				logHook("[DEBUG] " + message);
 			}
 		},
 		
 		/** Logs an info-level message. */
 		logInfo: function(message) {
 			if (logLevel <= SS_LOG_INFO) {
-				logHook("[INFO] " + message)
+				logHook("[INFO] " + message);
 			}
 		},
 		
 		/** Logs a warning-level message. */
 		logWarn: function(message) {
 			if (logLevel <= SS_LOG_WARN) {
-				logHook("[WARNING] " + message)
+				logHook("[WARNING] " + message);
 			}
 		},
 		
 		/** Logs an error-level message. */
 		logError: function(message) {
 			if (logLevel <= SS_LOG_ERROR) {
-				logHook("[ERROR] " + message)
+				logHook("[ERROR] " + message);
 			}
 		},
 				
@@ -943,7 +931,8 @@ var SquidSpace = function() {
 	 	/** ObjectLoaderHooks are called by name during object loading to create new 
 			instances of complex or custom objects.
 	
-		    Signature: hookFunction(objName, options, data, scene) {return: object instance or undefined if object could not be loaded}
+		    Signature: hookFunction(objName, options, data, scene) {return: 
+			                        object instance or undefined if object could not be loaded}
 		 */
 		attachObjectLoaderHook: function(hookName, hookFunction) {
 			let oldHook = objectLoaderHooks[hookName];
@@ -999,7 +988,7 @@ var SquidSpace = function() {
 							{
 								trigger: BABYLON.ActionManager.OnPickTrigger
 							},
-							function () {SquidSpace.fireOnClickEvent(eventName, objName, eventData);}
+							function () {SquidSpace.fireEvent(eventName, objName, eventData);}
 						),
 					);
 				}
@@ -1009,7 +998,7 @@ var SquidSpace = function() {
 			}
 		},
 		
-		fireOnClickEvent: function(eventName, sourceObjectName, eventData) {
+		fireEvent: function(eventName, sourceObjectName, eventData) {
 			if (eventName in eventHandlers) {
 				for (hdlr of eventHandlers[eventName]) {
 					hdlr(sourceObjectName, eventData);

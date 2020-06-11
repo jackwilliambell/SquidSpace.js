@@ -18,11 +18,13 @@ A Module File consists of JSON data containing one or more of the following name
 
 4. "data" – [any type; optional, but may be required or ignored by some Module File processors] – global data for the entire file (See also, Data below)
 
-5. "resources" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the resources in the module (see also, Resources below)
+5. "resources" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the resources in the module (see also, Resources Section below)
 
-6. "layouts" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the layouts in the module (see also, Layouts below)
+6. "layouts" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the layouts in the module (see also, Layouts Section below)
 
-7. "wiring" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the wiring in the module (see also, Wiring below)
+7. "events" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the events in the module (see also, Events Section below)
+
+8. "wiring" – [object; optional, but may be required or ignored by some Module File processors] – a specification for all the wiring in the module (see also, Wiring Section below)
 
 Module File example:
 
@@ -96,7 +98,7 @@ To re-state this more clearly: a 'resources' object contains named 'resource typ
  
 Each resource item consists of a specification for a single resource to be processed by the Module File processor. A resource item specification consists of the following named objects, although a specific Module File processor may add others:
 
-1. "name" – [string; required] – the name of the resource, should be unique within the resource type array 
+1. "resource-name" – [string; required] – the name of the resource, should be unique within the resource type array 
 
 2. "doc" – [string; optional] – documentation for the resource item, use to describe what the resource is for 
 
@@ -112,7 +114,7 @@ IMPORTANT! The Module File specification does not detail configuration, options,
 
 The layouts section of a module is an array containing one or more 'layout areas' to include in the output. There can be zero or more layout areas. Layout areas specify an area and contain a layout specification for the objects in that area. A layout area consists of the following named objects, although a specific Module File processor may add others:
 
-1. "name" – [string; required] – the name of the layout area, should be unique within the layouts array 
+1. "layout-name" – [string; required] – the name of the layout area, should be unique within the layouts array 
 
 2. "doc" – [string; optional] – documentation for the layout area, use to describe what the layout area is for 
 
@@ -149,6 +151,22 @@ Each placement command consists of the following objects:
 5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – placement command-specific data (See also, Data above)
 
 IMPORTANT! The Module File specification does not detail configuration, options, and data values for placement commands. Please refer to the documentation for the Module File processor you will be using for more information.
+
+## Events Section
+
+The events section of a module is an array containing one or more 'event declarations' to include in the output. There can be zero or more event declarations. Event declarations specify an object and a list of events and a list of events to attach to it. An event declaration consists of the following named objects, although a specific Module File processor may add others:
+
+1. "object" - (string; required] – the name of the object to attach the event to
+
+2. "doc" – [string; optional] – documentation for the event declaration, use to describe what the placement is for 
+
+3. "config" – [object; optional, but may be required or ignored by some Module File processors] – event declaration-specific configuration (See also, Configuation above)
+
+4. "options" – [object; optional, but may be required or ignored by some Module File processors] – event declaration-specific options (See also, Options above)
+
+5. "data" – [any type; optional, but may be required or ignored by some Module File processors] – event declaration-specific data (See also, Data above)
+
+IMPORTANT! The Module File specification does not detail configuration, options, and data values for event declarations. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Wiring Section
 

@@ -721,18 +721,6 @@ Placements are JSON objects specifying the location in the World space of an ins
 
 NOTE: If a placer algorithm results in multiple instances of the object, the instances are named using the "place-name" specified, with a dash ('-") and a number appended, where that number is zero to the number of instances placed minus one.
 
-### Built-in Placers
-
-SquidSpace.js provides the following 'built in' placer hooks:
-
-* 'default' – A basic placer that puts a single instance of an object at a specified position
-
-* 'linear-series' – A placer that puts a specified number of instances of an object in a row
-
-* 'rectangle' – A placer that puts a specified number of instances of an object in a rectangle
-
-* TODO: Other built-in placers
-
 ### Placement Configuration
 
 None at this time.
@@ -757,9 +745,9 @@ Standard data values for all Placer Algorithms, both builtins and "placer hook f
 
 All SquidSpace.js builtins "placer hook functions" also support:
 
-* "place-on-object" – [optional; the name of an object previously placed in the World Space within the same Layout Area] – Specifies an object to place an instance of this Object Placement on
+* "place-on-object" – [optional; the name of an object previously placed in the World Space] – Specifies an object to place an instance of this Object Placement on
 
-* "place-on-submesh" – [required if "place-on-object" is specified, otherwise do not use; A submesh of the object specified with the "place-on-object" value
+* "place-on-submesh" – [optional if "place-on-object" is specified, otherwise do not use; A submesh of the object specified with the "place-on-object" value
 
 NOTE: A common submesh naming pattern for objects which will have other objects placed on them is to use "top", "bottom", "left", "right", "front", and "back" if possible. 
 
@@ -769,28 +757,26 @@ TODO: Find a way to remove the loading order issue. One option is to defer on-ob
 
 TODO: Example
 
-### Placement Events
-
-TODO: Finish implementing and document.
-
 ### Builtin Placer Algorithms
 
 SquidSpace.js includes a number of builtin placer algorithms, any of which may be overridden by a "placer hook function" using the same name and using the same options. 
 
 The builtin placer algorithms are:
 
-* "single" – Places a single instance of an object in a particular location; requires only standard placement options values
+* "single" (also "default") – Places a single instance of an object in a particular location; requires only standard placement options values
 
 * "linear-series" - Places a row of instances of an object starting from a particular location; requires the standard placement options values, plus:
 	- "count" – [required; integer] – Specifies number of object instances to place in a row
 	- "across" – [optional; boolean, default is true] – Specifies whether the series goes from lesser "x" to a greater "x" value (true) or from lesser "z" to a greater "z" value (false)
 	- "offset" – [optional; number, default is "0"] – Specifies in size units the offset between objects when they are placed, if a negative value the objects may overlap
 
-* "rectangle" - Places a rectangle of instances of an object starting from a particular location; requires the standard placement options values, plus:
+* "rectangle-series" - Places a rectangle of instances of an object starting from a particular location; requires the standard placement options values, plus:
 	- "countWide" – [required; integer] – Specifies number of object instances to place in a row from lesser "x" to a greater "x" value
 	- "countDeep" – [required; integer] – Specifies number of object instances to place in a row from lesser "z" to a greater "z" value
 	- "lengthOffset" – [optional; number, default is "0"] – Specifies in size units the offset between objects along the "x" axis when they are placed, if a negative value the objects may overlap
 	- "widthOffset" – [optional; number, default is "0"] – Specifies in size units the offset between objects along the "x" axis when they are placed, if a negative value the objects may overlap
+
+* TODO: Other builtin placers as we add them.
 
 NOTE: "linear-series" and "rectangle" placement objects only place along the "x" and "z" axis's. The "y" axis is fixed from the placement's position.
 
@@ -798,5 +784,32 @@ TODO: Consider ways to do "y" axis placement.
 
 TODO: Determine if we need other builtin placement algorithms.
 
+## Events
 
+Events are a JSON array of JSON objects specifying zero or more 'Event Declarations'; each for a single loaded object. Each Event Declaration may specify zero to many events for the object.
 
+## Event Declarations
+
+Event Declarations specify a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a "builtin" by the runtime. All of the contained Event Specifications are for the same object.
+
+WARNING! Specifying an object name that is not loaded results in undefined behavior. 
+
+## Event Specifications
+
+Event Specifications specify a single event for an object, consisting of an attacher hook function to attach the event to the object, an event name, and the options and data related to that event. When an event of the event type occurs for the object, the source object, options, and data are sent to all event handlers associated with the event name. For more on event handlers, see Wiring Events.
+
+Standard data values for all Event Specifications include:
+
+* "object" – [required; the name of an object previously placed in the World Space] – Specifies the object the event is attached to
+
+* "attacher" – [optional, string containing an event attachment hook name, default is 'default'] – Specifies the event attachment hook function
+
+* "event-name" – [required; string] – Specifies the name event handlers for the event are attached to
+
+4. "options" – (object; optional) – option values to pass to the event handler when the event occurs (See also, Options above)
+
+5. "data" – (any type; optional) – data value(s) to pass to the event handler when the event occurs (See also, Data above)
+
+### Event Types
+
+TODO: 
