@@ -790,21 +790,15 @@ Events are a JSON array of JSON objects specifying zero or more 'Event Declarati
 
 ## Event Declarations
 
-Event Declarations specify a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a "builtin" by the runtime. All of the contained Event Specifications are for the same object.
+Event Declarations specify a single event for a named object, which must have been loaded as a resource in the current module, loaded as a resource in a separate module belonging to the same world, or included as a "builtin" by the runtime. The event specification includes an attacher hook function to attach the event to the object, an event name, and the options and data related to that event. When an event of the event type occurs for the object, the source object, options, and data are sent to all event handlers associated with the event name. For more on event handlers, see Wiring Events.
 
-WARNING! Specifying an object name that is not loaded results in undefined behavior. 
-
-## Event Specifications
-
-Event Specifications specify a single event for an object, consisting of an attacher hook function to attach the event to the object, an event name, and the options and data related to that event. When an event of the event type occurs for the object, the source object, options, and data are sent to all event handlers associated with the event name. For more on event handlers, see Wiring Events.
-
-Standard data values for all Event Specifications include:
+Standard data values for all Event Declarations include:
 
 * "object" – [required; the name of an object previously placed in the World Space] – Specifies the object the event is attached to
 
-* "attacher" – [optional, string containing an event attachment hook name, default is 'default'] – Specifies the event attachment hook function
+* "attacher" – [optional; string containing an event attachment hook name, default is 'default'] – Specifies the event attachment hook function that 'attaches' the event to the object
 
-* "event-name" – [required; string] – Specifies the name event handlers for the event are attached to
+* "event-name" – [required; string] – Specifies the name event handlers for the event are listening for
 
 4. "options" – (object; optional) – option values to pass to the event handler when the event occurs (See also, Options above)
 
@@ -813,3 +807,7 @@ Standard data values for all Event Specifications include:
 ### Event Types
 
 TODO: 
+
+## Wiring
+
+TODO:

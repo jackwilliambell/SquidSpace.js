@@ -326,6 +326,8 @@ var SquidSpace = function() {
 		}
 	}
 	
+	// TODO: Process events.
+	
 	//
 	// Loader Builtins.
 	//
@@ -976,6 +978,7 @@ var SquidSpace = function() {
 		// Events.
 		//
 
+		// Refactor to a named hook function and make this default.
 		attachClickEventToObject: function(objName, eventName, eventData, scene) {
 			meshes = SquidSpace.getLoadedObjectMeshes(objName);
 			
@@ -1006,7 +1009,7 @@ var SquidSpace = function() {
 			}
 		},
 		
-		addEventHandler: function(eventName, handlerFunc) {
+		addEventListener: function(eventName, handlerFunc) {
 			if (!(eventName in eventHandlers)) {
 				// Initialize the event name with an empty array.
 				eventHandlers[eventName] = [];
@@ -1016,7 +1019,7 @@ var SquidSpace = function() {
 			eventHandlers[eventName].push(handlerFunc);
 		},
 		
-		removeEventHandler: function(eventName, handlerFunc) {
+		removeEventListener: function(eventName, handlerFunc) {
 			if (!(eventName in eventHandlers)) {
 				// No event handlers! Bail now.
 			}
@@ -1077,35 +1080,6 @@ var SquidSpace = function() {
 			}
 			*/
 		
-			// Turn on optimizaton.
-			// TODO: Remove and refactor into SquidCommon as a hook. (New hook?)
-			var options = new BABYLON.SceneOptimizerOptions();
-			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
-			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
-			BABYLON.SceneOptimizerOptions.LowDegradationAllowed()  
-			BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed()  
-			BABYLON.SceneOptimizerOptions.HighDegradationAllowed() 
-			*/
-			options.addOptimization(new BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed());
-			var optimizer = new BABYLON.SceneOptimizer(scene, options);
-			optimizer.targetFrameRate = 40 // TODO: Come up with a way to make this user settable.
-
-		 	/* TODO: Remove and refactor.
-			if (debugVerbose) {
-				logDebug(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
-				optimizer.onSuccessObservable = new function() {
-					logDebug("Optimizer 'success'.")
-				}
-				optimizer.onNewOptimizationAppliedObservable = new function() {
-					logDebug("New optimization applied.")
-				}
-				optimizer.onFailureObservable = new function() {
-					logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
-				}
-			}
-			*/
-			//optimizer.start(); // Don't need?
-
 		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
 			if (debugLayer) scene.debugLayer.show();
 			*/
@@ -1174,6 +1148,7 @@ var SquidSpace = function() {
 				processLayouts(getValIfKeyInDict("layouts", spec, {}), scene);
 			}
 
+			// TODO: Process events.
 			
 		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
 			// Set gravity for the scene (G force on Y-axis)
@@ -1196,6 +1171,35 @@ var SquidSpace = function() {
 
 			// Enable Collisions for scene.
 			scene.collisionsEnabled = true;
+			
+			// Turn on optimizaton.
+			// TODO: Remove and refactor into SquidCommon as a hook. (New hook?)
+			var options = new BABYLON.SceneOptimizerOptions();
+			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
+			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
+			BABYLON.SceneOptimizerOptions.LowDegradationAllowed()  
+			BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed()  
+			BABYLON.SceneOptimizerOptions.HighDegradationAllowed() 
+			*/
+			options.addOptimization(new BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed());
+			var optimizer = new BABYLON.SceneOptimizer(scene, options);
+			optimizer.targetFrameRate = 40 // TODO: Come up with a way to make this user settable.
+
+		 	/* TODO: Remove and refactor.
+			if (debugVerbose) {
+				logDebug(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
+				optimizer.onSuccessObservable = new function() {
+					logDebug("Optimizer 'success'.")
+				}
+				optimizer.onNewOptimizationAppliedObservable = new function() {
+					logDebug("New optimization applied.")
+				}
+				optimizer.onFailureObservable = new function() {
+					logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
+				}
+			}
+			*/
+			optimizer.start(); // Don't need?
 			
 			// Call build hook.
 			// TODO: try/catch.
