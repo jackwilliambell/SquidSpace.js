@@ -2,29 +2,49 @@
 
 SquidSpace.js Module Files are JSON data used as inputs to several of the SquidSpace.js tools. In particular they are inputs to the SquidSpace.js tools to manage the asset pipeline and to generate runtime Javascript.
 
-All Module Files must conform to the [Module File Specification](modulefile-specification.md). However, that specification does not specify the content values of configuration, options, and data subsections of the different object types; leaving that to the implementation. In general, configuration ("config") sections are used by tools that read and use Module Files to do work. Options ("options") and Data ("data") subsections are used by the runtime API and are usually passed through by the tools unchanged or with minimal modification; although for resources the code generation tools may create the data section at runtime based on the configuration.
+All Module Files must conform to the [Module File Specification](modulefile-specification.md). However, that specification does not detail the content values of configuration, options, and data subsections of the different object types; leaving that to the implementation. In general, configuration ("config") sections are used by tools that read and use Module Files to do work. Options ("options") and Data ("data") subsections are used by the runtime API and are usually passed through by the tools unchanged or with minimal modification; although (especially for resources) the code generation tools may create the data section at runtime based on the configuration or modify other values.
 
-This document specifies the configuration subsection values supported by the SquidSpace.js tools. For more details on the tools please see the (tool documentation)[squidspace-tools.md]. It also specifies the options and data subsection values used by the runtime SquidSpace.js API. For more details on the runtime API please see the (API reference)[squidspace-api.md]. 
+This document specifies the configuration subsection values supported by the SquidSpace.js tools. For more details on the tools please see the [SquidSpace.js tools documentation](squidspace-tools.md). 
 
-This document is organized by "levels", starting from the top-level of the file and then drilling down through sections. The (Module File Specification)[modulefile-specification.md] details how the sections are organized and what values they may contain; this document only specifies the contents of the "config", "options" and "data" subsections of each section/object type level and is specific to SquidSpace.js.
+This document also specifies the options and data subsection values used by the runtime SquidSpace.js API. For more details on the runtime API please see the [SquidSpace.js API reference](squidspace-api.md). 
+
+## Module File Levels
+
+This document is organized by "levels", starting from the top-level of the file and then drilling down through sections. The [Module File Specification](modulefile-specification.md) details how the sections are organized; this document expands on that for the SquidSpace.js-specific implementation by specifying the contents of the "config", "options" and "data" subsections of each section on each level.
+
+The 'top' level is the 'Global Level', containing values applying to the whole Module File and, if the Module File is named 'world.module.json', to the project in the current working directory. For more detail see Global Level below.
+
+3D assets are specified in the 'Resources Level', which allows you to describe textures, materials, 3D objects and even runtime code 'mods', either directly or by referencing external files. For more detail see Resources Level below.
+
+How objects are arranged and displayed at runtime is specified in the 'Layouts Level', which allows you to describe what 3D object instances go where, using what materials. For more detail see Layouts Level below.
+
+Events may be attached to 3D objects and other things in the 'Events Level', which allows you to specify what event along with related options and data to be passed to the event handler. For more detail see Events Level below.
+
+Mods may be 'wired in' to the SquidSpace.js runtime in the 'Wiring Level', which allows you to specify exactly how a Mod modifies SquidSpace.js runtime behavior. For more detail see Wiring Level below.
 
 ## How Module Files are Used
 
 Module Files may be used in a number of ways by different SquidSpace.js tools and by third-party tools. The two most common usages are Code Generation (packing) and Asset Pipeline Management (pipelines).
 
-### Code Generation (Packing)
+### Providing Project Defaults and Information
 
-The Module File is used as input to a code generation tool, which then generates some sort of application-specific code. The SquidSpace SQS 'generate' utility generates an older-style javascript module, which allows loading without being blocked by CORS when the requesting HTML file is opened from a file system. (If you "insert" all of your 3D content into the generated modules you can run SquidSpace without requiring a web server.)
+All of the SquidSpace.js tools are configurable and each Module File can contain it's own configuration to drive the tools. The SquidSpace.js tools also support a 'default' configuration file, either provided with the tool command or behind the scenes by loading a file named 'world.module.json' in the working directory. In this way the 'world.module.json' file provides project-level defaults and information, although you can override it by specifying a different module file containing a "config" section with the command.
 
-For more details on the module file interface, see the SquidSpace documentation. 
+Module Files containing override configurations may consist of only the "config" section, the other sections are not reqired.
+
+For more details on the SquidSpace.js tools, see the [SquidSpace.js tools documentation](squidspace-tools.md). For more details on the possible configuration values see Global Configuration below.
+
+### Code Generation and Data Packing 
+
+The Module File may be used as input to a code generation tool, which then generates some sort of application-specific code from the data in the Module File, using the configuration sections to guide what code is generated. 
+
+In this case the SquidSpace.js SQS 'generate' command outputs an older-style javascript module, which may have the file contents of asset files 'packed' into it. This allows running in a web server without being blocked by CORS when the requesting HTML file is opened from a file system. See Resource Data Packing below.
+
+For more details on the Module File interface, see the [SquidSpace.js API reference](squidspace-api.md). 
 
 NOTE: It is possible to create your own SquidSpace content modules from scratch or to edit generated SquidSpace content modules. However, this is discouraged. Besides, Module Files are almost certainly simpler to use.
 
-### 3D Asset Pipeline Management (Pipelines)
-
-TODO:
-
-### Providing Project Defaults and Information
+### 3D Asset Pipeline Management
 
 TODO:
 
@@ -38,7 +58,9 @@ TODO: (size, position, rotation, etc.)
 
 ### Hook Function References
 
-SquidSpace.js supports "Hook Functions" that extend different classes of functionality. For some of these functionality classes the Hook Functions are named, in which case the that name may be referenced in the Module File data to use instead of the native SquidSpace.js functionality for that functionality class. There are also unnamed hook functions that are not referenced in the Module File but may invisibly modify SquidSpace.js behavior at runtime or when processing the Module File. For more detail on Hook Functions see the (SquidSpace.js API documentation)[squidspace-api.md] and the (SquidSpace.js Hooks documentation)[squidspace-hooks.md].
+SquidSpace.js supports "Hook Functions" that extend different classes of functionality. For some of these functionality classes the Hook Functions are named, in which case the that Hook Function name may be referenced in the Module File data to use instead of the default SquidSpace.js functionality for that functionality class. 
+
+NOTE: There are also unnamed Hook Functions that are not referenced in the Module File but may invisibly modify SquidSpace.js behavior at runtime or when processing the Module File. For more detail on Hook Functions see the [SquidSpace.js API reference](squidspace-api.md) and the [SquidSpace.js Hook Functions documentation](squidspace-hooks.md).
  
 Examples:
 
@@ -46,15 +68,30 @@ Examples:
 		{
 			"name": "foo",
 			"options": {
-				"loader": "fooLoader",
+				"loader": "FooLoader",
 				. . . Other object options values specific to fooLoader.
 			},
 			. . . Other object values.
 		},
 	],
 
+In the above example the "loader" value is a reference to the "FooLoader" Hook Function. 
 
-## Top (Global) Level 
+	{
+		"place-name": "bar",
+		"options": {
+			"placer": "BarPlacer",
+			. . . Other object options values specific to BarPlacer.
+		},
+		"data": {
+			"user-name": "Scooby Doo",
+			"greeting": "What ya doin' Scooby Do?"
+		}
+	}
+
+In the above example the "placer" value is a reference to the "BarPlacer" Hook Function and there are some data values specific to the "BarPlacer" Hook Function.
+
+## Global Level 
 
 The Top level of the file contains global values applying to the whole file. Besides the "config", "options" and "data" subsections the Top level contains a Modules ("modules") subsection. 
 
@@ -116,6 +153,7 @@ Example:
 			"mod-dir": "supportlibs/mods/",
 			"pretty-print": true,
 			"pretty-offset": 3
+			. . . Other configuration values.
 		},
 		. . . Other module values.
 	}
@@ -130,9 +168,9 @@ TODO: Example
 
 ### Global Data
 
-None at this time.
+SquidSpace.js does not use global data at this time.
 
-## Resources
+## Resources Level
 
 Resources are JSON objects that contain none, some, or all of Textures ("textures"), Materials ("materials"), Objects ("objects"), Lights ("lights") and Mods ("mods") subsections. Each of these resource types are used at runtime by SquidSpace.js via a Loader Hook Function. (See Loader Hook Functions below.) 
 
@@ -654,7 +692,7 @@ TODO: implement and document.
 
 TODO: implement and document.
 
-## Layouts
+## Layouts Level
 
 Layouts are JSON arrays containing a list of Layout Area JSON objects. Layouts do not contain "config", "options" and "data" subsections.
 
@@ -779,7 +817,7 @@ TODO: Consider ways to do "y" axis placement.
 
 TODO: Determine if we need other builtin placement algorithms.
 
-## Events
+## Events Level
 
 IMPORTANT! TODO: Events are not yet fully designed or implemented. This section will change.
 
@@ -835,6 +873,6 @@ Standard data values for all Event Declarations include:
 
 TODO: 
 
-## Wiring
+## Wiring Level
 
 TODO:
