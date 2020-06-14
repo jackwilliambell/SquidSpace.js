@@ -15,7 +15,7 @@ is 'sqs.py command <what> [options ...]'. The commands are:
              including resource filtering and cacheing
 * scaffold - Creates a new SquidSpace.js project directory with default content
 * serve    - Starts a test web server, 'ctrl-c' to exit
-* explain  - Explains a commond in more detail.
+* explain  - Explains a command in more detail
 
 In most cases a separate 'config' module.json file provides the default configuraton
 used by the command. When the command is processing a file containing it's own 

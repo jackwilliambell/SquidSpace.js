@@ -28,10 +28,81 @@ A Module File consists of JSON data containing one or more of the following name
 
 Module File example:
 
-TODO: Create a good generic exammple.
-
 	{
-		TODO: example
+		"doc": "This is a 'synthetic' example with no relation to an actual Module File implementation.",
+		"config": {
+			"doc": "Contains global configuration values for the file.",
+			. . . Other configuration values
+		},
+		"options": {
+			"doc": "Contains global option values for the file.",
+			. . . Other options values
+		},
+		"data": "Contains global data values for the file.",
+		"resources": {
+			"arbitrary-resource-type-name": {
+				"doc": "Each resource represents one thing used at runtime.",
+				"resource-name": "Unique name (within resource type) of a resource of type 'resource-type-name.'",
+				"config": {
+					"doc": "Contains configuration values for the resource.",
+					. . . Other configuration values
+				},
+				"options": {
+					"doc": "Contains option values for the resource.",
+					. . . Other option values
+				},
+				"data": "Contains data values for the resource."
+			}
+		},
+		"layouts": [
+			{
+				"doc": "Each layout area represents one area within a 3D space.",
+				"layout-name": "Unique name (within layouts) of a layout area.'",
+				"config": {
+					"doc": "Contains configuration values for the layout area.",
+					. . . Other configuration values
+				},
+				"options": {
+					"doc": "Contains option values for the layout area.",
+					. . . Other option values
+				},
+				"data": [
+					{
+						"doc": "Each object placement specifies placement commands for that object within a 3D space.",
+						"object": "Name of a loaded object resource.'",
+						"config": {
+							"doc": "Contains configuration values for the object placement.",
+							. . . Other configuration values
+						},
+						"options": {
+							"doc": "Contains option values for the object placement.",
+							. . . Other option values
+						},
+						"data": [
+							{
+								"doc": "Each placement command specifies object placement within a 3D space.",
+								"place-name": "Unique name (within layout area) used for placed objects.'",
+								"config": {
+									"doc": "Contains configuration values for the placement command.",
+									. . . Other configuration values
+								},
+								"options": {
+									"doc": "Contains option values for the placement command.",
+									. . . Other option values
+								},
+								"data": "Contains data values for the placement command."
+							}
+						]
+					}
+				]
+			}
+		],
+		"events": [
+			"doc": "TODO: Implement and Document."
+		],
+		"wiring": [
+			"doc": "TODO: Implement and Document."
+		]
 	}
 
 ## Doc
@@ -40,13 +111,15 @@ A 'doc' string may appear as a member of any object in a Module File, including 
 
 ## Configuration
 
-A 'config' object may appear as a member of any object in a Module File, including at the top level. The purpose of the config object is to set the configuration values used when processing the object they are attached to. The Module File processor may remove the config values when creating output as they have no runtime meaning. What named values a config object may contain and how they are used is dependent both on the Module File processor and the context of the config object within the Module File.
+A 'config' JSON object may appear as a member of any object in a Module File, including at the top level. The purpose of the config object is to set the configuration values used when processing the object they are attached to. The Module File processor may remove the config values when creating output as they have no runtime meaning. What named values a config object may contain and how they are used is dependent both on the Module File processor and the context of the config object within the Module File.
+
+IMPORTANT! Configuration values must not used directly for runtime purposes. They are only meant for code that processes the Module File. However, the Module File processor may add, remove or modify runtime values (options and data) to the processed output based on the contents of the Configuration.
 
 IMPORTANT! The Module File specification does not specify what named values a config object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
 ## Options
 
-An 'options' object may appear as a member of any object in a Module File, including at the top level. The purpose of the options object is to set the optional values used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. What named values an options object may contain and how they are used is dependent both on the Module File processor and the context of the options object within the Module File.
+An 'options' JSON object may appear as a member of any object in a Module File, including at the top level. The purpose of the options object is to set the optional values used at runtime by the object they are attached to and within it's context, although how those values are represented in the output is dependent on Module File processing. What named values an options object may contain and how they are used is dependent both on the Module File processor and the context of the options object within the Module File.
 
 IMPORTANT! The Module File specification does not specify what named values an options object must or may contain. Please refer to the documentation for the Module File processor you will be using for more information.
 
@@ -74,7 +147,7 @@ WARNING: Expression Strings can result in runtime failures if they are invalid e
 
 Examples:
 
-	"rotation": "$= [0, Math.pi * 90, 0]"
+	"rotation": "$= [0, Math.PI / 2, 0]"
 
 	"rotation": "$=[0, SquidSpace.rotate180, 0]"
 

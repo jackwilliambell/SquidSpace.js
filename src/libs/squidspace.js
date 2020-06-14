@@ -16,7 +16,7 @@
 
 	NOTE: SquidSpace is intentionally implemented as an old-style Javascript 
 	module, despite the fact it uses some newer Javascript functionality. 
-	This allows SquidSpace.js to be used from a file system without creating
+	This allows SquidSpace.js to be used from a file system without 
 	requiring a server and side-steps CORS exceptions in general.
 
 	## Some ideas for improvement
@@ -85,10 +85,10 @@ var SquidSpace = function() {
 		}
 	};
 	var objectLoaderHooks = {
-		"objectData": function(objName, options, data, scene) {
+		"ObjectData": function(objName, options, data, scene) {
 			return SquidSpace.loadObject(objName, options, data, scene, null, null, false);
 		},
-		"floor": function(objName, options, data, scene) {
+		"Floor": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
 			let sz = getValIfKeyInDict("size", data, [1, 1]);
 			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -99,7 +99,7 @@ var SquidSpace = function() {
 								materials.macadam, scene);
 		},
 		// TODO: Move this loader hook to squidhall.js
-		"floorSection": function(objName, options, data, scene) {
+		"FloorSection": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
 			let sz = getValIfKeyInDict("size", data, [1, 1]);
 			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -109,7 +109,7 @@ var SquidSpace = function() {
 			return addFloorSection(key, pos[0], pos[2], sz[0], sz[1], 
 									materials.marble, scene);
 		},
-		"userCamera": function(objName, options, data, scene) {
+		"UserCamera": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
 			let sz = getValIfKeyInDict("size", data, [1, 1]);
 			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -121,15 +121,15 @@ var SquidSpace = function() {
 							targetPos[0], targetPos[1], targetPos[2], scene);
 		}
 	};
-	objectLoaderHooks["default"] = objectLoaderHooks["objectData"]
+	objectLoaderHooks["default"] = objectLoaderHooks["ObjectData"]
 	var modLoaderHooks = {
 		"default": function(matName, options, data, scene) {
 			//return: object instance or undefined if object could not be loaded
 		}
 	};
 	var objectPlacerHooks = {
-		"single": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
-			// TODO: Handle areaOptions as needed. 
+		"Single": function(layoutName, layoutOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
 			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -146,8 +146,8 @@ var SquidSpace = function() {
 			
 			return false;
 		},
-		"linear-series": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
-			// TODO: Handle areaOptions as needed. 
+		"LinearSeries": function(layoutName, layoutOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
 			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -168,8 +168,8 @@ var SquidSpace = function() {
 			
 			return false;
 		},
-		"rectangle-series": function(areaName, areaOptions, objectName, placeName, options, data, scene) {
-			// TODO: Handle areaOptions as needed. 
+		"RectangleSeries": function(layoutName, layoutOptions, objectName, placeName, options, data, scene) {
+			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
 			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
@@ -191,7 +191,7 @@ var SquidSpace = function() {
 			return false;
 		}
 	};
-	objectPlacerHooks["default"] = objectPlacerHooks["single"]
+	objectPlacerHooks["default"] = objectPlacerHooks["Single"]
 	var userModeHooks = {};
 	
 	//
@@ -260,12 +260,12 @@ var SquidSpace = function() {
 		// Process all the layouts. This does not define processing order, so if we 
 		// run into use cases where there are inter-layout depedencies we'll need to
 		// control order as well.
-		for (key in layoutsSpecs) {
-			SquidSpace.logDebug(`processLayouts(): ${key} area.`);
+		for (layoutName in layoutsSpecs) {
+			SquidSpace.logDebug(`processLayouts(): ${layoutName} layout.`);
 
 			// Get working values.
-			let areaOptions = getValIfKeyInDict("options", layoutsSpecs[key], {});
-			let objPlacements = getValIfKeyInDict("objectPlacements", layoutsSpecs[key], []);
+			let layoutOptions = getValIfKeyInDict("options", layoutsSpecs[layoutName], {});
+			let objPlacements = getValIfKeyInDict("objectPlacements", layoutsSpecs[layoutName], []);
 
 			// TODO: Handle area layout options. (Currently ignoring them.) Things to do:
 			// 1. Save area and provide a get function
@@ -276,11 +276,11 @@ var SquidSpace = function() {
 			for (placement of objPlacements) {
 				// Get working values.
 				let objectName = getValIfKeyInDict("object", placement, undefined);
-				let placers = getValIfKeyInDict("placers", placement, []);
+				let placers = getValIfKeyInDict("data", placement, []);
 
 				// Do we have an object name?
 				if (typeof objectName === "string") {
-					SquidSpace.logDebug(`processLayouts(): ${key} area / ${objectName} object.`);
+					SquidSpace.logDebug(`processLayouts(): ${layoutName} layout / ${objectName} object.`);
 
 					// Process the placers.
 					for (placer of placers) {
@@ -293,21 +293,24 @@ var SquidSpace = function() {
 
 						// do we have a place name?
 						if (typeof placeName === "string") {
+							// Namespace place name with the layout name.
+							placeName = layoutName + '.' + placeName;
+							
 							SquidSpace.logDebug(
-								`processLayouts(): ${key} area / ${objectName} object / ${placeName} place / ${placerName} placer.`);
+								`processLayouts(): ${layoutName} layout / ${objectName} object / ${placeName} place / ${placerName} placer.`);
 							// Do we have a placer?
 							if (typeof placerFunc === "function") {
 								// Place it!
 								// TODO: Try/Catch and error handling.
-								let result = placerFunc(key, areaOptions, objectName, placeName,
+								let result = placerFunc(layoutName, layoutOptions, objectName, placeName,
 									options, data, scene);
 					
 								// Do we have a result?
 								if (result) {
-									// TODO: Event processing.
+									// TODO: Event processing? Need to decide if we allow it here.
 								} else {
 									SquidSpace.logError(
-										`processLayouts(): Placer Hook function ${placerName} for ${placeName} of ${objectName} in ${key} area failed.`);
+										`processLayouts(): Placer Hook function ${placerName} for ${placeName} of ${objectName} in ${layoutName} failed.`);
 								}
 							} else {
 								SquidSpace.logError(
@@ -315,12 +318,12 @@ var SquidSpace = function() {
 							}
 						} else {
 							SquidSpace.logError(
-								`processLayouts(): Placement without a valid place name for ${objectName} in ${key} area.`);
+								`processLayouts(): Placement without a valid place name for ${objectName} in ${layoutName}.`);
 						}
 					}
 				} else {
 					SquidSpace.logError(
-						`processLayouts(): Placement without a valid object name in ${key} area.`);
+						`processLayouts(): Placement without a valid object name in ${layoutName}.`);
 				}
 			}
 		}
@@ -755,7 +758,7 @@ var SquidSpace = function() {
 		addLinearSeriesToPlacements: function(seriesName, placements, count, x, z, offset,
 												across, rotation) {
 			for (let i = 0;i < count;i++) {
-				placements.push([seriesName + i, x, z, rotation])
+				placements.push([seriesName + '-' + i, x, z, rotation])
 				if (across) {
 					x += offset;
 				}
@@ -945,7 +948,7 @@ var SquidSpace = function() {
 	 	/** ObjectPlacerHooks are called by name during layout processing to perform complex
 		    or custom object placements.
 	
-		    Signature: hookFunction(areaName, areaOptions, objectName, placeName, 
+		    Signature: hookFunction(layoutName, layoutOptions, objectName, placeName, 
 		                            options, data, scene) {return: boolean}
 		 */
 		attachObjectPlacerHook: function(hookName, hookFunction) {
