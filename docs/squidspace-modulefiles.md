@@ -1,8 +1,8 @@
-# SquidSpace.js Module Files 
+# SquidSpace.js Module Files Reference
 
-SquidSpace.js Module Files are JSON data used as inputs to several of the SquidSpace.js tools. In particular they are inputs to the SquidSpace.js tools to manage the asset pipeline and to generate runtime Javascript.
+SquidSpace.js Module Files are JSON data used as inputs to several of the SquidSpace.js tools and as configuration for all of them. In particular they are inputs to the SquidSpace.js tools that manage the asset pipeline and generate runtime files.
 
-All Module Files must conform to the [Module File Specification](modulefile-specification.md). However, that specification does not detail the content values of configuration, options, and data subsections of the different object types; leaving that to the implementation. In general, configuration ("config") sections are used by tools that read and use Module Files to do work. Options ("options") and Data ("data") subsections are used by the runtime API and are usually passed through by the tools unchanged or with minimal modification; although (especially for resources) the code generation tools may create the data section at runtime based on the configuration or modify other values.
+All Module Files must conform to the [Module File Specification](modulefile-specification.md). However, that specification does not detail the content values of configuration, options, and data subsections of the different object types; leaving that to the implementation. In general, configuration ("config") subsections are used by tools that read and use Module Files to do work. Options ("options") and Data ("data") subsections are used by the runtime API and are usually passed through by the tools unchanged or with minimal modification; although (especially for resources) the code generation tools may create the data section at runtime based on the configuration and/or modify other values.
 
 This document specifies the configuration subsection values supported by the SquidSpace.js tools. For more details on the tools please see the [SquidSpace.js tools documentation](squidspace-tools.md). 
 
@@ -22,35 +22,69 @@ Events may be attached to 3D objects and other things in the 'Events Level', whi
 
 Mods may be 'wired in' to the SquidSpace.js runtime in the 'Wiring Level', which allows you to specify exactly how a Mod modifies SquidSpace.js runtime behavior. For more detail see Wiring Level below.
 
+Example:
+
+	{
+		"doc": "Top level.",
+		"config": {
+			"doc": "Global configuration values.",
+			. . . Zero or more global configuration values.
+		},
+		"options": {
+			"doc": "Global option values.",
+			. . . Zero or more global options values.
+		},
+		"resources": {
+			"doc": "Resources Level.",
+			. . . Zero or more resource types.
+		},
+		"layouts": [
+			"doc": "Layouts Level.",
+			. . . Zero or more layout areas.
+		],
+		"events": [
+			"doc": "Events Level.",
+			. . . Zero or more event declarations.
+		],
+		"wiring": [
+			"doc": "Wiring Level.",
+			. . . Zero or more wiring declarations.
+		]
+	}
+
 ## How Module Files are Used
 
 Module Files may be used in a number of ways by different SquidSpace.js tools and by third-party tools. The two most common usages are Code Generation (packing) and Asset Pipeline Management (pipelines).
 
 ### Providing Project Defaults and Information
 
-All of the SquidSpace.js tools are configurable and each Module File can contain it's own configuration to drive the tools. The SquidSpace.js tools also support a 'default' configuration file, either provided with the tool command or behind the scenes by loading a file named 'world.module.json' in the working directory. In this way the 'world.module.json' file provides project-level defaults and information, although you can override it by specifying a different module file containing a "config" section with the command.
+All of the SquidSpace.js tools are configurable and each Module File can contain it's own configuration to drive the tools. The SquidSpace.js tools also support a 'default' configuration file, either provided with the tool command or behind the scenes by loading a file named 'world.module.json' in the working directory. In this way the 'world.module.json' file provides project-level defaults and information, although you can override it by specifying with the command a different module file containing a "config" section.
 
-Module Files containing override configurations may consist of only the "config" section, the other sections are not reqired.
+Module Files containing override configurations may consist of only the "config" section, the other sections are not required nor used.
 
 For more details on the SquidSpace.js tools, see the [SquidSpace.js tools documentation](squidspace-tools.md). For more details on the possible configuration values see Global Configuration below.
 
 ### Code Generation and Data Packing 
 
-The Module File may be used as input to a code generation tool, which then generates some sort of application-specific code from the data in the Module File, using the configuration sections to guide what code is generated. 
+The Module File may be used as input to a code generation tool, which then generates some sort of application-specific code from the data in the Module File; using the configuration sections to guide what code is generated. 
 
-In this case the SquidSpace.js SQS 'generate' command outputs an older-style javascript module, which may have the file contents of asset files 'packed' into it. This allows running in a web server without being blocked by CORS when the requesting HTML file is opened from a file system. See Resource Data Packing below.
+In this case the SquidSpace.js SQS 'generate' command outputs an older-style javascript module, which may have the file contents of asset files ran through filters and then 'packed' into it for each "resource" section item with a "pack-options" value in their "config" subsection. Data packing allows running a SquidSpace.js-based simulation in a web browser without being blocked by CORS – when the requesting HTML file is opened from a file system. See Resource Data Packing below.
 
-For more details on the Module File interface, see the [SquidSpace.js API reference](squidspace-api.md). 
+For more details on the code generation, see the [SquidSpace.js Tools documentation](squidspace-tools.md). For more details on the SquidSpace.js tools, see the [SquidSpace.js tools documentation](squidspace-tools.md). For more details on the possible configuration values see Global Configuration and Standard Resource Configuration below.
 
 NOTE: It is possible to create your own SquidSpace content modules from scratch or to edit generated SquidSpace content modules. However, this is discouraged. Besides, Module Files are almost certainly simpler to use.
 
 ### 3D Asset Pipeline Management
 
-TODO:
+The Module File may be used as input to a asset file pipeline management tool, which then retrieves and processes remote files before placing them in a local cache for use by a code generation tool; using the configuration sections to guide the process.
+
+In this case the SQS 'pipeline' command processes the "resources" section of a Module File and, for each resource with a with a "cache-options" value in their "config" subsection, the resource file is retrieved appropriately, passed through series of 'filters', and then written to the local cache. See Resource Data Caching below.
+
+For more details on the SquidSpace.js tools, see the [SquidSpace.js tools documentation](squidspace-tools.md). For more details on the possible configuration values see Global Configuration and Standard Resource Configuration below.
 
 ## SquidSpace.js-Specific Module File Values
 
-SquidSpace.js supports some special data values to extend the capapabilities of Module Files. These include Hook Function References and Event Subsections.
+SquidSpace.js supports some special data values to extend the capabilities of Module Files. These include certain Standard Value Types, Hook Function References, and Filter Declarations.
 
 ### Standard Value Types
 
@@ -91,36 +125,34 @@ In the above example the "loader" value is a reference to the "FooLoader" Hook F
 
 In the above example the "placer" value is a reference to the "BarPlacer" Hook Function and there are some data values specific to the "BarPlacer" Hook Function.
 
+
+### Filter Declarations
+
+Filter declarations specify a series of filters through which data files are passed in order. Each filter declaration consists of the following:
+
+* "filter" – [required; string] – The name of the filter function to use
+
+* "options" – [optional; JSON object] – Options sent to the filter function when it is invoked
+
+* "data" – [optional; any] – Data value sent to the filter function when it is invoked
+
+When the tools execute the named filter function they pass the options and data values, along with the input and output file paths to use.  
+
 ## Global Level 
 
-The Top level of the file contains global values applying to the whole file. Besides the "config", "options" and "data" subsections the Top level contains a Modules ("modules") subsection. 
+The 'top' or Global Level of the file contains global values applying to the whole file. Besides the "config" and "options" global value subsections the Global Level contains "resources", "layouts", "events", and "wiring" level subsections with their own values.
 
-Example:
-
-	{
-		"doc": "Top level.",
-		"config": {
-			. . . Zero or more global configuration values.
-		},
-		"resources": {
-			. . . Zero or more resource types.
-		},
-		"layouts": [
-			. . . Zero or more layout areas.
-		],
-		"events": [
-			. . . Zero or more event declarations.
-		],
-		"wiring": [
-			. . . Zero or more wiring declarations.
-		]
-	}
+NOTE: Although the [Module File Specification](modulefile-specification.md) also allows a "data" global value subsection at the Global Level, SquidSpace.js Module Files do not require this subsection and the tooling will ignore it if present.
 
 ### Global Configuration
 
-Global configuration must be of type JSON object. Global configuration for the main world Module File sets the defaults for all related Module Files. Global configuration of non-world Module Files may override any provided world Module File global configuration values.
+Global Configuration must be of type JSON object. The Global Configuration in the main world Module File sets the defaults for all related Module Files in a project. See Providing Project Defaults and Information. The Global Configuration in all other Module Files may override the world Module File configuration, but only for that file.
 
-* "out-dir" – [optional; string] – Directory to write output Javascript output modules to, used by the spacepack tool; can be overridden for individual modules; default value depends on the tool reading the Module File
+The Global Configuration contains general configuration for the entire project:
+
+* "out-dir" – [optional; string] – Directory used for code generators output files; may be overridden for individual modules; default value depends on the tool reading the Module File
+
+* "scratch-dir" – [optional; string] – Directory used for scratch files when processing filters or doing other operations requiring intermediate files; default value depends on the tool reading the Module File
 
 * "texture-dir" – [optional; string] – Directory containing textures to import; can be overridden for individual textures; default value depends on the tool reading the Module File
 
@@ -138,8 +170,6 @@ Global configuration must be of type JSON object. Global configuration for the m
 
 * "global-pack-filters" – [optional; JSON object; default is none] – Specifies pack-filters keyed by profile name or file extension, where the values are standard resource "pack-filters", See Standard Resource Configuration
 
-* TODO: Other global configuration values
-
 Example:
 
 	{
@@ -153,10 +183,35 @@ Example:
 			"mod-dir": "supportlibs/mods/",
 			"pretty-print": true,
 			"pretty-offset": 3
+			"global-cache-filters": {
+				".foo": [
+					{
+						"filter": "FooFilter",
+						"options": {
+							. . . Filter options
+						},
+						"data": "Filter data"
+					},
+					. . . Other filter declarations.
+				]
+			},
+			"global-pack-filters": {
+				".bar": [
+					{
+						"filter": "BarFilter",
+						"options": {
+							. . . Filter options
+						},
+						"data": "Filter data"
+					},
+					. . . Other filter declarations.
+				]
+			}
 			. . . Other configuration values.
 		},
 		. . . Other module values.
 	}
+
 
 ### Global Options
 
@@ -202,7 +257,7 @@ Besides controlling data packing during code generation, Module Files may also b
 
 1. Local – The file is stored locally and may be accessed using a relative file path from the directory containing the Module File; "Local" files may be used with either "Insert" or "Link" ("Local" files are already in the cache)
 
-3. Cached – The file is copied from a fully qualified file location or from a URL to a local file path and optimized if necessary, after which it is available with a relative file path exactly like a "Local" file; "Cached" files may be used with either "Insert" or "Link" ("Cached" files are added to the cache)
+3. Cached – The file is copied from a fully qualified file location or from a URL to a local file path and optimized via filters if necessary, after which it is available with a relative file path exactly like a "Local" file; "Cached" files may be used with either "Insert" or "Link" ("Cached" files are added to the cache)
 
 2. Remote – The file is kept at remote location and always loaded from a fully qualified URL; "Remote" files may only be used with "Link" ("Remote" files are not cached and may even not be served from the same base URL if CORS headers are set up properly)
 
@@ -212,7 +267,7 @@ Resource Data Caching is not a runtime functionality, therefore all cache contro
 
 Whether and how files are cached is specified in the configuration subsection of each individual resource.
 
-IMPORTANT! It may be nescessary to run asset pipeline management tools against a Module File to pre-load the cache before you can run the code generation tools, in cases where the file data is to be inserted.
+IMPORTANT! It may be necessary to run asset pipeline management tools against a Module File to pre-load the cache before you can run the code generation tools, in cases where the file data is to be inserted.
 
 ### Resource Data Packing
 
@@ -224,13 +279,13 @@ Some resources may be specified entirely within the Module File using the option
 
 3. Link – The contents of the file are loaded externally at runtime using a fully-specified URL or a relative link copied into the generated code as the "data" value
 
+Whether and how data is packed is specified in the configuration subsection of each individual resource.
+
 Advantages of "Insert" and "None" include the ability to load resources from the file system without experiencing CORS limitations and reducing the number of separate network streams required; with faster load times and no lost data due to network timeouts. Disadvantages of "Insert" and "None" includes the possibility of generating very large output files during the Pack step. In most cases "Insert" and "None" provide the best performance and stability.
 
 Advantages of "Link" include the ability to utilize an external resource that might change over time and no CORS issues if your page headers are properly set up and you are not running from the file system. Disadvantages of Link include an increased number of network requests, lost data if the network times out, or the possibility the external resource may not be available at all for some reason.
 
 Resource Data Packing is not a runtime functionality, therefore all pack control values are specified in the resource configuration. (See Standard Resource Configuration.) 
-
-Whether and how data is packed is specified in the configuration subsection of each individual resource.
 
 ### Resource Loader Hook Functions
 
@@ -247,14 +302,13 @@ All resource configuration subsections provide the following standard resource c
 * "cache-options" – [optional; JSON object] – Specifies file cacheing options for the resource; default is no cacheing (local file resource only), options are:
 	- "file-source" – [optional; string containing a fully-qualified file path, do not use if "url-source" is specified] – Specifies the source of the data to cache
 	- "url-source" – [optional; string containing a fully-qualified URL, do not use if "file-source" is specified] – Specifies the source of the data to cache
-	- "cache-filters" – [optional; JSON array of filter specifications, do not use if "filter-profile" is supplied; defaults to "global-cache-filters" for the file extension, see Global Configuration] – Specifies filters to apply to the resource when it is being cached
+	- "cache-filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied; defaults to "global-cache-filters" for the file extension, see Global Configuration] – Specifies filters to apply to the resource when it is being cached
 	- "filter-profile" – [optional; string, do not use if "cache-filters" is supplied] – Specifies a filter-profile name from the global options, which will be used to determine the cache filters for the resource instead of using the file name extension
 
 * "pack-options" – [optional; JSON object] – Specifies file packing options for the resource; default is no packing (use "data" value as-is), options are:
 	- "action": [optional; string containing one of "none", "insert", "link"] – Specifies file packing options for the resource; default is "none"
-	- "pack-filters" – [optional; JSON array of filters specifications, do not use if "filter-profile" is supplied; defaults to "global-pack-filters" for the file extension; defaults to "global-pack-filters" for the file type, see Global Configuration] – Specifies filters to apply to the resource when it is being packed
+	- "pack-filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied; defaults to "global-pack-filters" for the file extension; defaults to "global-pack-filters" for the file type, see Global Configuration] – Specifies filters to apply to the resource when it is being packed
 	- "filter-profile" – [optional; string, do not use if "pack-filters" is supplied] – Specifies a filter-profile name from the global options, which will be used to determine the pack filters for the resource instead of using the file name extension
-	- TODO: Other options?
 
 * "dir" – [optional; string; use only if "file-name" is also specified] – Directory containing the file resource; overrides the global "dir" value for the resource section; when doing cacheing also specifies the directory the file is cached in
 

@@ -56,8 +56,8 @@ Module File example:
 		},
 		"layouts": [
 			{
-				"doc": "Each layout area represents one area within a 3D space.",
-				"layout-name": "Unique name (within layouts) of a layout area.'",
+				"doc": "Each layout represents one 'area' within a 3D space.",
+				"layout-name": "Unique name (within layouts) for a layout area.'",
 				"config": {
 					"doc": "Contains configuration values for the layout area.",
 					. . . Other configuration values

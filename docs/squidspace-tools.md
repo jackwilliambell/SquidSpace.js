@@ -1,16 +1,18 @@
 # SquidSpace.js Tools
 
-The SquidSpace tools are a set of utilities for working with [SquidSpace.js Module Files](squidspace-modulefiles.md), providing services ranging from code generation and asset pipeline management to building and packaging runtime files. There are two basic ways to use the SquidSpace.js Tools:
+The SquidSpace.js tools are a set of utilities for working with [SquidSpace.js Module Files](squidspace-modulefiles.md), providing services ranging from code generation and asset pipeline management to building and packaging runtime files. There are two basic ways to use the SquidSpace.js Tools:
 
 1. From the command line using the sqs command runner; see Command Line Use below
 
 2. From your own Python code, importing the SquidSpace.js Tools you need and using them directly; see Using the SQS Tools as Components below
 
-The SQS Tools are broken down into 'commands' and the commands are further broken down into functions which can exectute all or part of a command. See SQS Commands below.
+The SQS Tools are broken down into 'commands' and the commands are further broken down into functions which can execute all or part of a command. See SQS Commands below.
+
+The SquidSpace.js tools use module.json files for basic configuration and  module.json files or build.json files as input to control how they work. See Command Configuration below. See also, the [SquidSpace.js Module Files Reference](squidspace-modulefiles.md) and the [SquidSpace.js Build Files Reference](squidspace-buildfiles.md).
 
 ## Dependencies
 
-SQS Tools are written in Python 3 and require a Python 3 Interpreter; the basic SQS tools have no code dependencies. However, some tools allow external plugins and those plugins may have their own dependencies. See Extending the SQS Tools with Plugins below.
+The SquidSpace.js tools are written in Python 3 and require a Python 3 Interpreter; the basic SQS tools have no code dependencies. However, some tools allow external 'filter' plugins and those filters may have their own dependencies. See Extending the SQS Tools with Filter Functions below.
 
 ## Command Line Use
 
@@ -104,18 +106,18 @@ SQS Tools provide the following commands (explained in more detail below):
 
 For any tools that process an input file, the following rules apply:
 
-1. In most cases a separate 'config' module.json file provides the default configuraton used by the command
+1. In most cases a separate 'config' module.json file provides the default configuration used by the command
 
-2. When the command is processing a file containing it's own configuraton, the local configuraton can override any values in the default configuration 
+2. When the command is processing a file containing it's own configuration, the local configuration  can override any values in the default configuration 
 
 3. If a default configuration is not specified and the working directory contains a file named 'world.module.json', that file is automatically used for the default configuration 
    - IMPORTANT! If you do not want to use the world file for the default, make certain to specify a different configuration file.
 
-The configuration values themselves are detailed in the [SquidSpace.js Module Files Specification](squidspace-modulefiles.md).
+The configuration values themselves are detailed in the [SquidSpace.js Module Files R](squidspace-modulefiles.md).
 
 ### generate Command
 
-The SquidSpace.js 'generate' command reads in a 'module' file containing JSON data meeting the Module File Specification and using the SquidSpace.js Module File extensions. Then, with that data, it generates a Javascript module containing the everything specified in the module file, including external data files 'packed' into the Javascript module. See also the [SquidSpace.js Module Files Specification](squidspace-modulefiles.md).
+The SquidSpace.js 'generate' command reads in a 'module' file containing JSON data meeting the Module File Specification and using the SquidSpace.js Module File extensions. Then, with that data, it generates a Javascript module containing the everything specified in the module file, including external data files 'packed' into the Javascript module. 
 
 TODO: More detail with examples.
 
@@ -133,7 +135,7 @@ TODO: Document with examples.
 
 ### pipeline Command
 
-The pipeline command manages an asset pipeline for files used during code generation and runtime. 
+The pipeline command reads in a 'module' file containing JSON data meeting the Module File Specification and using the SquidSpace.js Module File extensions. Then, with that data, it manages an asset pipeline for files used during code generation and runtime. 
 
 TODO: More detail with examples.
 
@@ -151,8 +153,7 @@ TODO: More detail with examples.
 
 TODO: Document with examples.
 
-
-## Extending the SQS Tools with Plugins
+## Extending the SQS Tools with Filter Functions
 
 TODO: Document with examples.
 
