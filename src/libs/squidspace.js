@@ -3,7 +3,7 @@
 //'use strict'; 
 
 
-/** The SquidSpace module provides a runtime for a simulated
+/** The SquidSpace.js module provides a runtime for a simulated
 	scene. It allows you to define a 'world' and will then run
 	that world as a simulation using the world's settings and 
 	allowing the user to move around it in similar to how they 
@@ -14,7 +14,7 @@
 	be changed. For example, gravity can be increased or decreased;
 	affecting how far you can jump and how fast you move.
 
-	NOTE: SquidSpace is intentionally implemented as an old-style Javascript 
+	NOTE: SquidSpace.js is intentionally implemented as an old-style Javascript 
 	module, despite the fact it uses some newer Javascript functionality. 
 	This allows SquidSpace.js to be used from a file system without 
 	requiring a server and side-steps CORS exceptions in general.
@@ -31,7 +31,7 @@
 
 	We need to determine if we want to support gamepads.
 
-	SquidSpace, the associated tooling, and the documentation are copyright Jack William Bell 2020. 
+	SquidSpace.js, the associated tooling, and the documentation are copyright Jack William Bell 2020. 
     All other content, including HTML files and 3D assets, are copyright their respective
     authors.
 */
@@ -44,8 +44,8 @@ const SS_LOG_WARN = 2;
 const SS_LOG_ERROR = 3;
 const SS_LOG_NONE = 9;
 
-// SquidSpace core.
-var SquidSpace = function() {
+// SquidSpace.js core.
+var SQUIDSPACE = function() {
 	
 	//
 	// Module data.
@@ -72,8 +72,8 @@ var SquidSpace = function() {
 	//
 
 	var logHook = function(message){console.log(message);};
-	var prepareHook = function(scene){SquidSpace.logInfo("prepareHook()");};
-	var buildHook = function(scene){SquidSpace.logInfo("buildHook()");};
+	var prepareHook = function(scene){SQUIDSPACE.logInfo("prepareHook()");};
+	var buildHook = function(scene){SQUIDSPACE.logInfo("buildHook()");};
 	var textureLoaderHooks = {
 		"default": function(texName, options, data, scene) {
 			//return: object instance or undefined if object could not be loaded
@@ -86,35 +86,24 @@ var SquidSpace = function() {
 	};
 	var objectLoaderHooks = {
 		"ObjectData": function(objName, options, data, scene) {
-			return SquidSpace.loadObject(objName, options, data, scene, null, null, false);
+			return SQUIDSPACE.loadObject(objName, options, data, scene, null, null, false);
 		},
 		"Floor": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
-			let sz = getValIfKeyInDict("size", data, [1, 1]);
-			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let mn = getValIfKeyInDict("material", data, "");
+			let sz = SQUIDSPACE.getValIfKeyInDict("size", data, [1, 1]);
+			let pos = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
+			let mn = SQUIDSPACE.getValIfKeyInDict("material", data, "");
 			// TODO: Get material from material list by material name
 			//       with a default if not loaded.
 			return addFloor(pos[0], pos[1], pos[2], sz[0], sz[1], 
 								materials.macadam, scene);
 		},
-		// TODO: Move this loader hook to squidhall.js
-		"FloorSection": function(objName, options, data, scene) {
-			// TODO: Size should be 3 elements.
-			let sz = getValIfKeyInDict("size", data, [1, 1]);
-			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let mn = getValIfKeyInDict("material", data, "");
-			// TODO: Get material from material list by material name
-			//       with a default if not loaded.
-			return addFloorSection(key, pos[0], pos[2], sz[0], sz[1], 
-									materials.marble, scene);
-		},
 		"UserCamera": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
-			let sz = getValIfKeyInDict("size", data, [1, 1]);
-			let pos = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let mn = getValIfKeyInDict("material", data, "");
-			let targetPos = getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
+			let sz = SQUIDSPACE.getValIfKeyInDict("size", data, [1, 1]);
+			let pos = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
+			let mn = SQUIDSPACE.getValIfKeyInDict("material", data, "");
+			let targetPos = SQUIDSPACE.getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
 			// TODO: Get material from material list by material name
 			//       with a default if not loaded.
 			return addCamera(pos[0], pos[1], pos[2], 
@@ -132,15 +121,15 @@ var SquidSpace = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
-			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let rotation = getValIfKeyInDict("rotation", data, [0, 0, 0]);
+			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
+			let rotation = SQUIDSPACE.getValIfKeyInDict("rotation", data, [0, 0, 0]);
 			let plc = [];
 			
 			// TODO: Placements currently do not include 'y' and only rotate on y axis.
-			SquidSpace.addSingleInstanceToPlacements(placeName, plc, position[0], position[2], rotation[1]);
+			SQUIDSPACE.addSingleInstanceToPlacements(placeName, plc, position[0], position[2], rotation[1]);
 
 			if (plc.length > 0) {
-				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
 				return true;
 			}
 			
@@ -150,19 +139,19 @@ var SquidSpace = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
-			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let rotation = getValIfKeyInDict("rotation", data, [0, 0, 0]);
-			let count = getValIfKeyInDict("count", data, 1);
-			let across = getValIfKeyInDict("across", data, true);
-			let offset = getValIfKeyInDict("offset", data, 0);
+			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
+			let rotation = SQUIDSPACE.getValIfKeyInDict("rotation", data, [0, 0, 0]);
+			let count = SQUIDSPACE.getValIfKeyInDict("count", data, 1);
+			let across = SQUIDSPACE.getValIfKeyInDict("across", data, true);
+			let offset = SQUIDSPACE.getValIfKeyInDict("offset", data, 0);
 			let plc = [];
 			
 			// TODO: Placements currently do not include 'y' and only rotate on y axis.
-			SquidSpace.addLinearSeriesToPlacements(placeName, plc, count, position[0], position[2], 
+			SQUIDSPACE.addLinearSeriesToPlacements(placeName, plc, count, position[0], position[2], 
 				offset, across, rotation[1]);
 			
 			if (plc.length > 0) {
-				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
 				return true;
 			}
 			
@@ -172,19 +161,19 @@ var SquidSpace = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
-			let position = getValIfKeyInDict("position", data, [0, 0, 0]);
-			let countWide = getValIfKeyInDict("countWide", data, 1);
-			let countDeep = getValIfKeyInDict("countDeep", data, 1);
-			let lengthOffset = getValIfKeyInDict("lengthOffset", data, 0);
-			let widthOffset = getValIfKeyInDict("widthOffset", data, 0);
+			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
+			let countWide = SQUIDSPACE.getValIfKeyInDict("countWide", data, 1);
+			let countDeep = SQUIDSPACE.getValIfKeyInDict("countDeep", data, 1);
+			let lengthOffset = SQUIDSPACE.getValIfKeyInDict("lengthOffset", data, 0);
+			let widthOffset = SQUIDSPACE.getValIfKeyInDict("widthOffset", data, 0);
 			let plc = [];
 			
 			// TODO: Placements currently do not include 'y' and only rotate on y axis.
-			SquidSpace.addRectangleSeriesToPlacements(placeName, plc, countWide, countDeep, 
+			SQUIDSPACE.addRectangleSeriesToPlacements(placeName, plc, countWide, countDeep, 
 				position[0], position[2], lengthOffset, widthOffset);
 			
 			if (plc.length > 0) {
-				SquidSpace.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
 				return true;
 			}
 		
@@ -192,7 +181,6 @@ var SquidSpace = function() {
 		}
 	};
 	objectPlacerHooks["default"] = objectPlacerHooks["Single"]
-	var userModeHooks = {};
 	
 	//
 	// Events.
@@ -201,23 +189,9 @@ var SquidSpace = function() {
 	var eventHandlers = {};
 	
 	//
-	// Helper functions.
+	// Spec processing functions.
 	//
-
-	var getValIfKeyInDict = function(key, dict, defaultVal) {
-		if ((dict != undefined) && (typeof dict === "object")) {
-			if (key in dict) {
-				return dict[key];
-			}
-		}
-		
-		return defaultVal;
-	}
-	
-	//
-	// Spec process functions.
-	//
-	// TODO: Wiring. 
+	// TODO: Wiring and events. 
 	//
 	
 	var processLoaders = function(loaderSpecs, loaderHooks, scene, loaderTypeName) {
@@ -226,32 +200,37 @@ var SquidSpace = function() {
 		// control order as well.
 		for (key in loaderSpecs) {			
 			// Get working values.
-			let options = getValIfKeyInDict("options", loaderSpecs[key], {});
-			let data = getValIfKeyInDict("data", loaderSpecs[key], undefined);
-			let loaderName = getValIfKeyInDict("loader", options, "default");
-			let loader = getValIfKeyInDict(loaderName, loaderHooks, undefined);
+			let options = SQUIDSPACE.getValIfKeyInDict("options", loaderSpecs[key], {});
+			let data = SQUIDSPACE.getValIfKeyInDict("data", loaderSpecs[key], undefined);
+			let loaderName = SQUIDSPACE.getValIfKeyInDict("loader", options, "default");
+			let loader = SQUIDSPACE.getValIfKeyInDict(loaderName, loaderHooks, undefined);
 			
-			SquidSpace.logDebug(`processLoaders(): ${key} spec / ${loaderName} loader.`);
+			SQUIDSPACE.logDebug(`processLoaders(): ${key} spec / ${loaderName} loader.`);
 			
 			// Do we have a loader?
 			if (typeof loader === "function") {
 				// Load it!
 				// TODO: Try/Catch and error handling.
-				let result = loader(key, options, data, scene);
-				
+				let result = undefined;
+				try {
+					result = loader(key, options, data, scene);
+				} catch(e) {
+					SQUIDSPACE.logError(`processLoaders(): loader ${loaderName} failed with error ${e}.`)
+				}
+			
 				// Do we have a result?
 				if (result != undefined) {
 					// Append the options.
+					// TODO: Consider better ways to do this and if we want to. (Right now
+					//       just wastes memory without a solid use case)
 					result.options = options;
 					
-					// TODO: Event processing.
-					
 					// Save the object for later.
-					SquidSpace.addObjectInstance(key, result);
+					SQUIDSPACE.addObjectInstance(key, result);
 				}
 			}
 			else {
-				SquidSpace.logError(`processLoaders(): No ${loaderTypeName} loader hook named '${loaderName}'.`);
+				SQUIDSPACE.logError(`processLoaders(): No ${loaderTypeName} loader hook named '${loaderName}'.`);
 			}
 		}
 	}
@@ -261,11 +240,11 @@ var SquidSpace = function() {
 		// run into use cases where there are inter-layout depedencies we'll need to
 		// control order as well.
 		for (layoutName in layoutsSpecs) {
-			SquidSpace.logDebug(`processLayouts(): ${layoutName} layout.`);
+			SQUIDSPACE.logDebug(`processLayouts(): ${layoutName} layout.`);
 
 			// Get working values.
-			let layoutOptions = getValIfKeyInDict("options", layoutsSpecs[layoutName], {});
-			let objPlacements = getValIfKeyInDict("objectPlacements", layoutsSpecs[layoutName], []);
+			let layoutOptions = SQUIDSPACE.getValIfKeyInDict("options", layoutsSpecs[layoutName], {});
+			let objPlacements = SQUIDSPACE.getValIfKeyInDict("objectPlacements", layoutsSpecs[layoutName], []);
 
 			// TODO: Handle area layout options. (Currently ignoring them.) Things to do:
 			// 1. Save area and provide a get function
@@ -275,54 +254,50 @@ var SquidSpace = function() {
 			// Process the object placements.
 			for (placement of objPlacements) {
 				// Get working values.
-				let objectName = getValIfKeyInDict("object", placement, undefined);
-				let placers = getValIfKeyInDict("data", placement, []);
+				let objectName = SQUIDSPACE.getValIfKeyInDict("object", placement, undefined);
+				let placers = SQUIDSPACE.getValIfKeyInDict("data", placement, []);
 
 				// Do we have an object name?
 				if (typeof objectName === "string") {
-					SquidSpace.logDebug(`processLayouts(): ${layoutName} layout / ${objectName} object.`);
+					SQUIDSPACE.logDebug(`processLayouts(): ${layoutName} layout / ${objectName} object.`);
 
 					// Process the placers.
 					for (placer of placers) {
 						// Get working values.
-						let options = getValIfKeyInDict("options", placer, {});
-						let data = getValIfKeyInDict("data", placer, {});
-						let placeName = getValIfKeyInDict("place-name", placer, undefined);
-						let placerName = getValIfKeyInDict("placer", options, "default");
-						let placerFunc = getValIfKeyInDict(placerName, objectPlacerHooks, undefined);
+						let options = SQUIDSPACE.getValIfKeyInDict("options", placer, {});
+						let data = SQUIDSPACE.getValIfKeyInDict("data", placer, {});
+						let placeName = SQUIDSPACE.getValIfKeyInDict("place-name", placer, undefined);
+						let placerName = SQUIDSPACE.getValIfKeyInDict("placer", options, "default");
+						let placerFunc = SQUIDSPACE.getValIfKeyInDict(placerName, objectPlacerHooks, undefined);
 
 						// do we have a place name?
 						if (typeof placeName === "string") {
 							// Namespace place name with the layout name.
 							placeName = layoutName + '.' + placeName;
 							
-							SquidSpace.logDebug(
+							SQUIDSPACE.logDebug(
 								`processLayouts(): ${layoutName} layout / ${objectName} object / ${placeName} place / ${placerName} placer.`);
 							// Do we have a placer?
 							if (typeof placerFunc === "function") {
 								// Place it!
-								// TODO: Try/Catch and error handling.
-								let result = placerFunc(layoutName, layoutOptions, objectName, placeName,
-									options, data, scene);
-					
-								// Do we have a result?
-								if (result) {
-									// TODO: Event processing? Need to decide if we allow it here.
-								} else {
-									SquidSpace.logError(
-										`processLayouts(): Placer Hook function ${placerName} for ${placeName} of ${objectName} in ${layoutName} failed.`);
+								let result = undefined;
+								try {
+									result = placerFunc(layoutName, layoutOptions, objectName, placeName,
+																		options, data, scene);
+								} catch(e) {
+									SQUIDSPACE.logError(`processLayouts(): Placer Hook function ${placerName}  for ${placeName} of ${objectName} in ${layoutName} failed with error ${e}.`)
 								}
 							} else {
-								SquidSpace.logError(
+								SQUIDSPACE.logError(
 									`processLayouts(): No placer hook named '${placerName}'.`);
 							}
 						} else {
-							SquidSpace.logError(
+							SQUIDSPACE.logError(
 								`processLayouts(): Placement without a valid place name for ${objectName} in ${layoutName}.`);
 						}
 					}
 				} else {
-					SquidSpace.logError(
+					SQUIDSPACE.logError(
 						`processLayouts(): Placement without a valid object name in ${layoutName}.`);
 				}
 			}
@@ -359,17 +334,6 @@ var SquidSpace = function() {
 
 		return [floor];
 	}
-
-	// TODO: Refactor this into squidhall.js
-	var addFloorSection = function(secName, x, z, w, d, material, scene) {
-		var floorSection = BABYLON.MeshBuilder.CreatePlane(secName, 
-												{width: w, height:d}, scene);
-		floorSection.position = new SquidSpace.makeLayoutVector(x, 0.001, z, w, d);
-		floorSection.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
-	    floorSection.material = material;
-		floorSection.material.backFaceCulling = false;
-		return [floorSection];
-	}
 	
 	var addCamera = function(x, y, z, targetX, targetY, targetZ, scene) {
 
@@ -378,10 +342,10 @@ var SquidSpace = function() {
 		// TODO: Support switching to VirtualJoysticksCamera if running on a tablet or phone.
 		// See https://doc.babylonjs.com/babylon101/cameras#virtual-joysticks-camera
 		let camera = new BABYLON.UniversalCamera("usercamera", 
-												SquidSpace.makePointVector(x, y, x), scene);
+												SQUIDSPACE.makePointVector(x, y, x), scene);
 		//var camera = new BABYLON.FreeCamera("default camera", new BABYLON.Vector3(0, 5, -10), scene);
 		//var camera = new BABYLON.FlyCamera("default camera", new BABYLON.Vector3(0, 5, -10), scene);
-		camera.setTarget(new SquidSpace.makePointVector(targetX, targetY, targetZ));
+		camera.setTarget(new SQUIDSPACE.makePointVector(targetX, targetY, targetZ));
 		camera.attachControl(canvas, true);
 
 		//
@@ -390,6 +354,7 @@ var SquidSpace = function() {
 		//
 
 		// Set the ellipsoid around the camera for collision detection.
+		// TODO: Make this settable from the world module file.
 		// TODO: Experiment with values to find best.
 		// TODO: Consider making pack file settable.
 		// NOTE: ellipsoid values must be carefully chosen to reduce image tearing when
@@ -412,26 +377,23 @@ var SquidSpace = function() {
 		camera.checkCollisions = true;
 		camera.applyGravity = true;
 
-		/* TODO: Remove and refactor.
 		// Other camera settings.
+		// TODO: Make these settable from the world module file.
 		// TODO: Experiment with values to find best.
 		// TODO: Consider making pack file settable or even dynamically settable.
 		camera.fov = 1.3;
-		if (!debugCamera) {
-			//camera.speed = 0.15; // Lower values slow movement down.
-			camera.speed = 0.20;
-			//camera.speed = 0.25; .
-			//camera.speed = 0.55; 
-		    //camera.inertia = 0.2; // Lower values slow movement down, but also affect look/turning.
-			//camera.inertia = 0.4;
-			//camera.inertia = 0.6;
-			camera.inertia = 0.8;
-			//camera.inertia = 1; // DO NOT USE - you will not like it.
-			//camera.angularSensibility = 500; // Lower values increase look/turning speed, default is 2000.
-			camera.angularSensibility = 750;
-			//camera.angularSensibility = 1000;
-		}
-		*/
+		//camera.speed = 0.15; // Lower values slow movement down.
+		camera.speed = 0.20;
+		//camera.speed = 0.25; .
+		//camera.speed = 0.55; 
+	    //camera.inertia = 0.2; // Lower values slow movement down, but also affect look/turning.
+		//camera.inertia = 0.4;
+		//camera.inertia = 0.6;
+		camera.inertia = 0.8;
+		//camera.inertia = 1; // DO NOT USE - you will not like it.
+		//camera.angularSensibility = 500; // Lower values increase look/turning speed, default is 2000.
+		camera.angularSensibility = 750;
+		//camera.angularSensibility = 1000;
 		
 		return [camera];
 	}
@@ -446,6 +408,20 @@ var SquidSpace = function() {
 		//
 		// Public helper functions.
 		//
+		
+		/** Returns the value for the key in the dict, unless the dict 
+		    is not a dictionary or the key does not exist; in which case
+		    it returns the default value.
+		 */
+		getValIfKeyInDict: function(key, dict, defaultVal) {
+			if ((dict != undefined) && (typeof dict === "object")) {
+				if (key in dict) {
+					return dict[key];
+				}
+			}
+		
+			return defaultVal;
+		},
 		
 		/** Returns an array of points in the form [x, y, z], where the points are 
 		    calculated from the passed points using the following rules:
@@ -614,11 +590,11 @@ var SquidSpace = function() {
 		*/
 		loadObject: function(objName, options, data, scene, onSuccessFunc, onFailFunc, doNotAdd) {
 			let obj = undefined;
-			let visible = getValIfKeyInDict("visible", options, false);
-			let collisionDetect = getValIfKeyInDict("collision-detection", options, true);
+			let visible = SQUIDSPACE.getValIfKeyInDict("visible", options, false);
+			let collisionDetect = SQUIDSPACE.getValIfKeyInDict("collision-detection", options, true);
 			// For meshNameFilter, empty string means import *all* meshes in the object.
-			let meshNameFilter = getValIfKeyInDict("mesh-name-filter", options, ""); 
-			let loaderPluginExtension = getValIfKeyInDict("loader-plugin", options, false);
+			let meshNameFilter = SQUIDSPACE.getValIfKeyInDict("mesh-name-filter", options, ""); 
+			let loaderPluginExtension = SQUIDSPACE.getValIfKeyInDict("loader-plugin", options, false);
 			
 			let rootUrl = "";
 			let sceneFilename = null;
@@ -633,11 +609,9 @@ var SquidSpace = function() {
 				sceneFilename = "data:" + data["file-name"];
 			}
 			else {
-				// TODO: Log error. 
+				SQUIDSPACE.logWarn(`Invalid data values for ${objName}. Data ${data}`);
 				return undefined;
 			}
-			
-			// TODO: Events support.
 			
 			BABYLON.SceneLoader.ImportMesh(meshNameFilter, rootUrl, sceneFilename, scene, 
 					function(newMeshes) {
@@ -648,7 +622,7 @@ var SquidSpace = function() {
 						}
 						
 						// Save the meshes for later?
-						if (!doNotAdd) SquidSpace.addObjectInstance(objName, newMeshes);
+						if (!doNotAdd) SQUIDSPACE.addObjectInstance(objName, newMeshes);
 						
 						// Is there a success function?
 						if (typeof onSuccessFunc == "function") onSuccessFunc(newMeshes);
@@ -661,7 +635,7 @@ var SquidSpace = function() {
 						obj = newMeshes;
 					}, null,
 					function(scene, message, exception) {
-						SquidSpace.logError("== '" + objName + 
+						SQUIDSPACE.logError("== '" + objName + 
 							"' mesh import failed. ==\n  Message: " + 
 							message.substring(0, 64) + " ... " +  message.substring(message.length - 64) +
 							"\n  Exception: " + exception);
@@ -681,7 +655,7 @@ var SquidSpace = function() {
 		    'undefined' if it fails. 
 		*/
 		cloneObject: function(objName, cloneObjName) {
-			let meshes = SquidSpace.getLoadedObjectMeshes(objName);
+			let meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
 			let clone = [];
 			
 			// If we have meshes, clone them.
@@ -694,7 +668,7 @@ var SquidSpace = function() {
 			// Did we get anything?
 			if (clone.length > 0) {
 				// Add the cloned object to the internal list.
-				SquidSpace.addObjectInstance(cloneObjName, clone);
+				SQUIDSPACE.addObjectInstance(cloneObjName, clone);
 				
 				// We are good!
 				return clone;
@@ -790,17 +764,17 @@ var SquidSpace = function() {
 
 			// Do width placements.
 			for (let i = 0;i < countWide;i++) {
-				SquidSpace.addLinearSeriesToPlacements(seriesName + "-top-", placements, 
+				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-top-", placements, 
 													countWide, wx, z, lengthOffset, true, norot);
-				SquidSpace.addLinearSeriesToPlacements(seriesName + "-bottom-", placements, 
+				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-bottom-", placements, 
 													countWide, wx, bz, lengthOffset, true, norot);
 			}
 
 			// Do depth placements.
 			for (let i = 0;i< countDeep;i++) {
-				SquidSpace.addLinearSeriesToPlacements(seriesName + "-left-", placements, 
+				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-left-", placements, 
 								countDeep, x - lengthOffset, z + lengthOffset, lengthOffset, false, rot);
-				SquidSpace.addLinearSeriesToPlacements(seriesName + "-right-", placements, 
+				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-right-", placements, 
 								countDeep, rx, z + lengthOffset, lengthOffset, false, rot);
 			}
 		},
@@ -814,7 +788,7 @@ var SquidSpace = function() {
 		 */
 		placeObjectInstances: function(objName, placements, matName, scene) {
 			// Get the meshes.
-			let meshes = SquidSpace.getLoadedObjectMeshes(objName);
+			let meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
 			if ((typeof meshes != "object") && !(meshes instanceof Array) && (meshes.length < 1))
 				 throw `Mesh not loaded for object reference: ''${objName}''.`;
 		
@@ -826,7 +800,7 @@ var SquidSpace = function() {
 					newMeshes.push(m);
 					
 					// Set placement values.
-					m.position = SquidSpace.makeLayoutVector(
+					m.position = SQUIDSPACE.makeLayoutVector(
 										instance[1], 0.01, instance[2], m.scaling.x, m.scaling.y);
 					if (placements[3] != 0) {
 						m.rotate(BABYLON.Axis.Y, instance[3]);
@@ -840,7 +814,7 @@ var SquidSpace = function() {
 					// TODO: Fix this. IMPORTANT!
 					//let bv = m.getBoundingInfo().boundingBox.minimum;
 				}
-				SquidSpace.addObjectInstance(instance[0], newMeshes);			
+				SQUIDSPACE.addObjectInstance(instance[0], newMeshes);			
 			}
 		},
 
@@ -854,11 +828,10 @@ var SquidSpace = function() {
 			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLvl)) {
 				// Set the log level.
 				logLevel = logLvl;
-				SquidSpace.logDebug(`setLogLevel(): Setting log level to ${logLevel}.`);
+				SQUIDSPACE.logDebug(`setLogLevel(): Setting log level to ${logLevel}.`);
 			}
 			else {
-				SquidSpace.logError(`setLogLevel(): Invalid log level: ${logLevel} - could not set.`);
-				// TODO: Throw exception?
+				SQUIDSPACE.logWarn(`setLogLevel(): Invalid log level: ${logLevel} - could not set.`);
 			}
 		},
 		
@@ -957,50 +930,32 @@ var SquidSpace = function() {
 			return oldHook;
 		},
 		
-	 	/** The UserModeHook is called by name to modify the user camera settings and 
-			other user related values with the setUserMode() function, where the hook 
-			name is the name of the user mode.
-		
-			The SquidSpace.js SquidDebug mod adds 'debug', 'debug-inspect' and 
-			'inspect' user modes.
-		
-			The SquidSpace.js SquidWalkthrough mod adds 'fly', 'walk' and 'run' user modes.
-		
-			NOTE: The user camera is set up as an object during worldBuild() processing. Some 
-			user cameras may not be compatable with particular user modes. 
-	
-		    Signature: hookFunction(options, data, userCamera, scene) {return: boolean}
-		 */
-		attachUserModeHook: function(hookName, hookFunction) {
-			let oldHook = userModeHooks[hookName];
-			userModeHooks[hookName] = hookFunction;
-			return oldHook;
-		},
-
 		//
 		// Events.
 		//
 
 		// Refactor to a named hook function and make this default.
 		attachClickEventToObject: function(objName, eventName, eventData, scene) {
-			meshes = SquidSpace.getLoadedObjectMeshes(objName);
+			meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
 			
 			if (typeof meshes != "undefined") {
 				for (mesh of meshes) {
-					// TODO: Wrap with try-catch and then raise custom error or log or something.
-					mesh.actionManager = new BABYLON.ActionManager(scene);
-					mesh.actionManager.registerAction(
-						new BABYLON.ExecuteCodeAction(
-							{
-								trigger: BABYLON.ActionManager.OnPickTrigger
-							},
-							function () {SquidSpace.fireEvent(eventName, objName, eventData);}
-						),
-					);
+					try {
+						mesh.actionManager = new BABYLON.ActionManager(scene);
+						mesh.actionManager.registerAction(
+							new BABYLON.ExecuteCodeAction({
+									trigger: BABYLON.ActionManager.OnPickTrigger
+								},
+								function () {SQUIDSPACE.fireEvent(eventName, objName, eventData);}
+							),
+						);
+					} catch(e) {
+						SQUIDSPACE.logError(`attachClickEventToObject(): Attaching click event to ${objName} failed with error ${e}.`)
+					}
 				}
 			}
 			else {
-				// TODO: error or log or something.
+				SQUIDSPACE.logWarn(`attachClickEventToObject(): ${objName} not found.`)
 			}
 		},
 		
@@ -1042,67 +997,23 @@ var SquidSpace = function() {
 		getUserCamera: function() {
 			return objects["userCamera"];
 		},
-		
-		/** Sets the user mode to the passed mode using the passed options 
-			and data. There must be a user mode hook with the mode name. Returns
-			false if the user mode is not available, otherwise returns the 
-			user mode hook function result.
-		*/
-		setUserMode: function(modeName, options, data, scene) {
-			if (modeName in userModeHooks) {
-				return userModeHooks[modeName](options, data, 
-					SquidSpace.getUserCamera(), scene);
-			}
-
-			// Failed. 
-			SquidSpace.logError(`Unknown user mode: ${modeName}.`)
-			return false;
-		},
-		
+				
 		//
 		// Public scene management functions.
 		//
 		
 		/** PoC-specific function to load the passed scene from the world 
 		    and content specs. 
-		
-			If not provided, userMode defaults to 'default'. 
-		*/
+         */
 		buildWorld: function(worldSpec, contentSpecs, scene) {
 			// Assume success.
 			let success = true;
-		 
-		 	/* TODO: Remove and refactor.
-			if (debugVerbose) {
-				// TODO: Improve debug handling.
-				// TODO: Either make this optional or move it to a hook.
-				// Log plugin activations.
-				BABYLON.SceneLoader.OnPluginActivatedObservable.add(function (plugin) {
-				    logDebug(`Plugin Activated: ${plugin.name}`);
-				});
-			}
-			*/
-		
-		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
-			if (debugLayer) scene.debugLayer.show();
-			*/
-			
-			// Call prepare hook.
-			// TODO: try/catch.
-			prepareHook(scene);
-			
-			/* TODO: Remove this.
-			debugCamera = debugVerbose;
-			if (debugVerbose) {
-				//showWorldAxis(10)
-			}
-			*/
-		 
+					 
 			// Verify inputs.
 			// TODO: Add other validation checks, such as object
 			//       member validation.
 			if (typeof worldSpec != "object") {
-				// World spec is required.
+				SQUIDSPACE.logWarn("No valid world module supplied.")
 				success = false;
 			}
 			if ((typeof contentSpecs != "object") && !(contentSpecs instanceof Array)) {
@@ -1110,7 +1021,7 @@ var SquidSpace = function() {
 				contentSpecs = [];
 			}
 			if (typeof scene != "object") {
-				// Scene is required.
+				SQUIDSPACE.logWarn("No valid scene supplied.")
 				success = false;
 			}
 		
@@ -1118,65 +1029,57 @@ var SquidSpace = function() {
 			if (!success) {
 				return success;
 			}
+		 					
+			// Call prepare hook.
+			try {
+				prepareHook(scene);
+			} catch(e) {
+				SQUIDSPACE.logError(`buildWorld(): Prepare Hook Function failed with error ${e}.`)
+			}
 			
 			// Load resources from specs using a specific order to avoid dependency issues.
-			processLoaders(getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, 
 							scene, "mods");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("mods", spec, {}), modLoaderHooks, 
+				processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", spec, {}), modLoaderHooks, 
 								scene, "mods");
 			}
-			processLoaders(getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, 
 							scene, "textures");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, 
+				processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, 
 								scene, "textures");
 			}
-			processLoaders(getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, 
 							scene, "materials");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, 
+				processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, 
 								scene, "materials");
 			}
-			processLoaders(getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, 
 							scene, "objects");
 			for (spec of contentSpecs) {
-				processLoaders(getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, 
+				processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, 
 								scene, "objects");
 			}
 			
 			// Process layouts from specs.
-			processLayouts(getValIfKeyInDict("layouts", worldSpec, {}), scene);
+			processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", worldSpec, {}), scene);
 			for (spec of contentSpecs) {
-				processLayouts(getValIfKeyInDict("layouts", spec, {}), scene);
+				processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", spec, {}), scene);
 			}
 
 			// TODO: Process events.
 			
-		 	/* TODO: Remove and refactor into SquidDebug as a user mode hook.
-			// Set gravity for the scene (G force on Y-axis)
-			// See https://doc.babylonjs.com/babylon101/cameras,_mesh_collisions_and_gravity
-			// TODO: Determine best settings here.
-			if (debugVerbose) {
-				// TODO: Give this it's own argument instead of debugVerbose.
-				// Allow user to fly.
-				scene.gravity = new BABYLON.Vector3(0, 0, 0); 
+			// Call build hook.
+			try {
+				buildHook(scene);
+			} catch(e) {
+				SQUIDSPACE.logError(`buildWorld(): Build Hook Function failed with error ${e}.`)
 			}
-			else {
-				// User walks on ground.
-				// TODO: Configure from pack file?
-				scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
-			}
-			*/
-			// User walks on ground.
-			// TODO: Configure from pack file?
-			scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
-
-			// Enable Collisions for scene.
-			scene.collisionsEnabled = true;
-			
+						
 			// Turn on optimizaton.
-			// TODO: Remove and refactor into SquidCommon as a hook. (New hook?)
+			// TODO: Consider if we want to into SquidCommon as a hook. (New hook?)
 			var options = new BABYLON.SceneOptimizerOptions();
 			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
 			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
@@ -1187,26 +1090,17 @@ var SquidSpace = function() {
 			options.addOptimization(new BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed());
 			var optimizer = new BABYLON.SceneOptimizer(scene, options);
 			optimizer.targetFrameRate = 40 // TODO: Come up with a way to make this user settable.
-
-		 	/* TODO: Remove and refactor.
-			if (debugVerbose) {
-				logDebug(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
-				optimizer.onSuccessObservable = new function() {
-					logDebug("Optimizer 'success'.")
-				}
-				optimizer.onNewOptimizationAppliedObservable = new function() {
-					logDebug("New optimization applied.")
-				}
-				optimizer.onFailureObservable = new function() {
-					logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
-				}
+			SQUIDSPACE.logDebug(`Optimizer target framerate: ${optimizer.targetFrameRate}`)
+			optimizer.onSuccessObservable = new function() {
+				SQUIDSPACE.logDebug("Optimizer 'success'.")
 			}
-			*/
+			optimizer.onNewOptimizationAppliedObservable = new function() {
+				SQUIDSPACE.logDebug("New optimization applied.")
+			}
+			optimizer.onFailureObservable = new function() {
+				SQUIDSPACE.logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
+			}
 			optimizer.start(); // Don't need?
-			
-			// Call build hook.
-			// TODO: try/catch.
-			buildHook(scene);
 
 			// Done.
 			return success;

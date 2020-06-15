@@ -1,8 +1,8 @@
 
-var SquidCommon = function() {
+var SQUIDCOMMON = function() {
 	
 	var attachPlacerHooks = function(squidSpace){
-		squidSpace.attachPlacerHook("hookname",
+		SQUIDSPACE.attachPlacerHook("hookname",
 			function(areaName, areaOrigin, config, placeName, data, objName, meshes, scene) {
 				
 				squidSpace.logDebug(`hookname called! ${areaName}, ${areaOrigin}, ${config}, ${placeName}, ${data}`);
@@ -11,7 +11,7 @@ var SquidCommon = function() {
 	};
 	
 	var attachLoaderHooks = function(squidSpace){
-		squidSpace.attachLoaderHook("hookname",
+		SQUIDSPACE.attachLoaderHook("hookname",
 			function(areaName, areaOrigin, config, placeName, data, objName, meshes, scene) {
 				
 				squidSpace.logDebug(`hookname called! ${areaName}, ${areaOrigin}, ${config}, ${placeName}, ${data}`);
