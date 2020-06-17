@@ -37,12 +37,12 @@
 */
 
 // Log levels.
-const SS_LOG_ALL = 0;
-const SS_LOG_DEBUG = 0;
-const SS_LOG_INFO = 1;
-const SS_LOG_WARN = 2;
-const SS_LOG_ERROR = 3;
-const SS_LOG_NONE = 9;
+const SQS_LOG_ALL = 0;
+const SQS_LOG_DEBUG = 0;
+const SQS_LOG_INFO = 1;
+const SQS_LOG_WARN = 2;
+const SQS_LOG_ERROR = 3;
+const SQS_LOG_NONE = 9;
 
 // SquidSpace.js core.
 var SQUIDSPACE = function() {
@@ -56,7 +56,7 @@ var SQUIDSPACE = function() {
 	var norot = 0; // Do not rotate.
 	var rot = Math.PI / 2; // Rotate 90 degrees.
 
-	var logLevel = SS_LOG_ERROR;
+	var logLevel = SQS_LOG_ERROR;
 
 	// This is the NW corner of the arena and the origin for layouts. 
 	var floorOriginNW = [0, 0, 0]; 
@@ -194,7 +194,9 @@ var SQUIDSPACE = function() {
 	// TODO: Wiring and events. 
 	//
 	
-	var processLoaders = function(loaderSpecs, loaderHooks, scene, loaderTypeName) {
+	var processLoaders = function(loaderSpecs, loaderHooks, scene, loaderTypeName, overWrite=false) {
+		// TODO: Modify so 'overWrite' disallows replacing an existing resource.
+		
 		// Process all the objects. This does not define processing order, so if we 
 		// run into use cases where there are inter-object depedencies we'll need to
 		// control order as well.
@@ -205,7 +207,7 @@ var SQUIDSPACE = function() {
 			let loaderName = SQUIDSPACE.getValIfKeyInDict("loader", options, "default");
 			let loader = SQUIDSPACE.getValIfKeyInDict(loaderName, loaderHooks, undefined);
 			
-			SQUIDSPACE.logDebug(`processLoaders(): ${key} spec / ${loaderName} loader.`);
+			SQUIDSPACE.logDebug(`processLoaders(): ${loaderTypeName} / ${key} spec / ${loaderName} loader.`);
 			
 			// Do we have a loader?
 			if (typeof loader === "function") {
@@ -235,7 +237,9 @@ var SQUIDSPACE = function() {
 		}
 	}
 	
-	var processLayouts = function(layoutsSpecs, scene) {
+	var processLayouts = function(layoutsSpecs, scene, overWrite=false) {
+		// TODO: Modify so 'overWrite' disallows replacing an existing object.
+		
 		// Process all the layouts. This does not define processing order, so if we 
 		// run into use cases where there are inter-layout depedencies we'll need to
 		// control order as well.
@@ -414,10 +418,9 @@ var SQUIDSPACE = function() {
 		    it returns the default value.
 		 */
 		getValIfKeyInDict: function(key, dict, defaultVal) {
-			if ((dict != undefined) && (typeof dict === "object")) {
-				if (key in dict) {
-					return dict[key];
-				}
+			if ((dict != undefined) && (typeof dict === "object") && 
+				(key in dict) && dict.hasOwnProperty(key)) {
+				return dict[key];
 			}
 		
 			return defaultVal;
@@ -582,7 +585,7 @@ var SQUIDSPACE = function() {
 		/** Loads the named object using the passed options and data. Calls the passed success
 		    function if the object is loaded calls the passed fail function if the object could 
 			not be loaded. Unless the doNotAdd paramater is true it adds the object to 
-			the internal list, making it available to the getLoadedObjectMeshes() function. 
+			the internal list, making it available to the getLoadedObject() function. 
 			Returns the loaded object or 'undefined'. 
 		
 		    The options and data values are the same as used for pack file options with the 
@@ -655,7 +658,7 @@ var SQUIDSPACE = function() {
 		    'undefined' if it fails. 
 		*/
 		cloneObject: function(objName, cloneObjName) {
-			let meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
+			let meshes = SQUIDSPACE.getLoadedObject(objName);
 			let clone = [];
 			
 			// If we have meshes, clone them.
@@ -694,9 +697,33 @@ var SQUIDSPACE = function() {
 			or added with the addObject() function. If the object is available it returns 
 			an array of meshes for the object. If it was not it returns 'undefined'. 
 		*/
-		getLoadedObjectMeshes: function(objName) {
+		getLoadedObject: function(objName) {
 			if (objName in objects) {
 				return objects[objName];
+			}
+			
+			return undefined;
+		},
+		
+		/** Returns an array of currently loaded object names. 
+		 */
+		getLoadedObjectNames: function() {
+			return Object.keys(objects);
+		},
+		
+		/** Calls the passed map function on every loaded object until the map function 
+		    returns something other than 'undefined', at which point it stops processing
+		    and returns the map function response. Returns undefined if the map function 
+		    processes every object without returning something other than undefined. 
+		
+			Function signature: mapFunc(objName, obj)
+		 */
+		mapObjects: function(mapFunc) {
+			for (var objName in objects) {
+			    if (objects.hasOwnProperty(objName)) {           
+			        let result = mapFunc(objName, objects[objName]);
+					if (result != undefined) return result;
+			    }
 			}
 			
 			return undefined;
@@ -788,7 +815,7 @@ var SQUIDSPACE = function() {
 		 */
 		placeObjectInstances: function(objName, placements, matName, scene) {
 			// Get the meshes.
-			let meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
+			let meshes = SQUIDSPACE.getLoadedObject(objName);
 			if ((typeof meshes != "object") && !(meshes instanceof Array) && (meshes.length < 1))
 				 throw `Mesh not loaded for object reference: ''${objName}''.`;
 		
@@ -825,40 +852,40 @@ var SQUIDSPACE = function() {
 		/** Sets the current log level to the passed level, if valid. */
 		setLogLevel: function(logLvl) {
 			// Is it a valid log level?
-			if ([SS_LOG_DEBUG, SS_LOG_INFO, SS_LOG_WARN, SS_LOG_ERROR].includes(logLvl)) {
+			if ([SQS_LOG_DEBUG, SQS_LOG_INFO, SQS_LOG_WARN, SQS_LOG_ERROR].includes(logLvl)) {
 				// Set the log level.
 				logLevel = logLvl;
-				SQUIDSPACE.logDebug(`setLogLevel(): Setting log level to ${logLevel}.`);
+				SQUIDSPACE.logInfo(`setLogLevel(): Setting log level to ${logLevel}.`);
 			}
 			else {
-				SQUIDSPACE.logWarn(`setLogLevel(): Invalid log level: ${logLevel} - could not set.`);
+				SQUIDSPACE.logInfo(`setLogLevel(): Invalid log level: ${logLevel} - could not set.`);
 			}
 		},
 		
 		/** Logs a debug-level message. */
 		logDebug: function(message) {
-			if (logLevel <= SS_LOG_DEBUG) {
+			if (logLevel <= SQS_LOG_DEBUG) {
 				logHook("[DEBUG] " + message);
 			}
 		},
 		
 		/** Logs an info-level message. */
 		logInfo: function(message) {
-			if (logLevel <= SS_LOG_INFO) {
+			if (logLevel <= SQS_LOG_INFO) {
 				logHook("[INFO] " + message);
 			}
 		},
 		
 		/** Logs a warning-level message. */
 		logWarn: function(message) {
-			if (logLevel <= SS_LOG_WARN) {
+			if (logLevel <= SQS_LOG_WARN) {
 				logHook("[WARNING] " + message);
 			}
 		},
 		
 		/** Logs an error-level message. */
 		logError: function(message) {
-			if (logLevel <= SS_LOG_ERROR) {
+			if (logLevel <= SQS_LOG_ERROR) {
 				logHook("[ERROR] " + message);
 			}
 		},
@@ -936,7 +963,7 @@ var SQUIDSPACE = function() {
 
 		// Refactor to a named hook function and make this default.
 		attachClickEventToObject: function(objName, eventName, eventData, scene) {
-			meshes = SQUIDSPACE.getLoadedObjectMeshes(objName);
+			meshes = SQUIDSPACE.getLoadedObject(objName);
 			
 			if (typeof meshes != "undefined") {
 				for (mesh of meshes) {
@@ -988,24 +1015,32 @@ var SQUIDSPACE = function() {
 				eventHandlers.splice(idx, 1);
 			}
 		},
-		
-		//
-		// User functions.
-		//
-		
-		/** Returns the current user camera object. */
-		getUserCamera: function() {
-			return objects["userCamera"];
-		},
-				
+						
 		//
 		// Public scene management functions.
 		//
 		
+		loadContent: function(contentSpec, scene, overWrite=false) {
+			// Load resources from spec using a specific order to avoid dependency issues.
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", contentSpec, {}), modLoaderHooks, 
+							scene, "mods", overWrite)
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", contentSpec, {}), textureLoaderHooks, 
+							scene, "textures", overWrite)
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", contentSpec, {}), materialLoaderHooks, 
+							scene, "materials", overWrite)
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", contentSpec, {}), objectLoaderHooks, 
+							scene, "objects", overWrite)
+			
+			// Do layouts.
+			processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", contentSpec, {}), scene, overWrite);
+			
+			// TODO: Attach events.
+		},
+		
 		/** PoC-specific function to load the passed scene from the world 
 		    and content specs. 
          */
-		buildWorld: function(worldSpec, contentSpecs, scene) {
+		buildWorld: function(worldSpec, contentSpecs, scene, overWrite=false) {
 			// Assume success.
 			let success = true;
 					 
@@ -1013,7 +1048,7 @@ var SQUIDSPACE = function() {
 			// TODO: Add other validation checks, such as object
 			//       member validation.
 			if (typeof worldSpec != "object") {
-				SQUIDSPACE.logWarn("No valid world module supplied.")
+				SQUIDSPACE.logWarn("buildWorld(): No valid world module supplied.")
 				success = false;
 			}
 			if ((typeof contentSpecs != "object") && !(contentSpecs instanceof Array)) {
@@ -1021,12 +1056,13 @@ var SQUIDSPACE = function() {
 				contentSpecs = [];
 			}
 			if (typeof scene != "object") {
-				SQUIDSPACE.logWarn("No valid scene supplied.")
+				SQUIDSPACE.logWarn("buildWorld(): No valid scene supplied.")
 				success = false;
 			}
-		
+	
 			// Are we OK to continue?
 			if (!success) {
+				SQUIDSPACE.logError("buildWorld(): Failed.")
 				return success;
 			}
 		 					
@@ -1037,39 +1073,11 @@ var SQUIDSPACE = function() {
 				SQUIDSPACE.logError(`buildWorld(): Prepare Hook Function failed with error ${e}.`)
 			}
 			
-			// Load resources from specs using a specific order to avoid dependency issues.
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", worldSpec, {}), modLoaderHooks, 
-							scene, "mods");
+			// Load all the content.
+			SQUIDSPACE.loadContent(worldSpec, scene, overWrite);
 			for (spec of contentSpecs) {
-				processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", spec, {}), modLoaderHooks, 
-								scene, "mods");
+				SQUIDSPACE.loadContent(spec, scene, overWrite);
 			}
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", worldSpec, {}), textureLoaderHooks, 
-							scene, "textures");
-			for (spec of contentSpecs) {
-				processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", spec, {}), textureLoaderHooks, 
-								scene, "textures");
-			}
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", worldSpec, {}), materialLoaderHooks, 
-							scene, "materials");
-			for (spec of contentSpecs) {
-				processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", spec, {}), materialLoaderHooks, 
-								scene, "materials");
-			}
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", worldSpec, {}), objectLoaderHooks, 
-							scene, "objects");
-			for (spec of contentSpecs) {
-				processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", spec, {}), objectLoaderHooks, 
-								scene, "objects");
-			}
-			
-			// Process layouts from specs.
-			processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", worldSpec, {}), scene);
-			for (spec of contentSpecs) {
-				processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", spec, {}), scene);
-			}
-
-			// TODO: Process events.
 			
 			// Call build hook.
 			try {
@@ -1079,7 +1087,7 @@ var SQUIDSPACE = function() {
 			}
 						
 			// Turn on optimizaton.
-			// TODO: Consider if we want to into SquidCommon as a hook. (New hook?)
+			// TODO: Consider if we want to refactor this into SquidCommon as a hook. (New hook?)
 			var options = new BABYLON.SceneOptimizerOptions();
 			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
 			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
