@@ -34,6 +34,8 @@ class ModuleConfiguration(object):
         self.matDir = "assets/materials/"
         self.objDir = "assets/objects/"
         self.modDir = "assets/mods/"
+        self.cacheFilters = {}
+        self.packFilters = {}
         
         # TODO: make sure the 'dir' values are proper paths with a trailing slash and/or
         # use Python dir functions to generate full path. 
@@ -55,7 +57,11 @@ class ModuleConfiguration(object):
                 self.objDir = defaultConfigData["object-dir"]
             if "mod-dir" in defaultConfigData:
                 self.modDir = defaultConfigData["mod-dir"]   
-                                 
+            if "global-cache-filters" in defaultConfigData:
+                self.cacheFilters.update(defaultConfigData["global-cache-filters"])   
+            if "global-pack-filters" in defaultConfigData:
+                self.packFilters.update(defaultConfigData["global-pack-filters"])   
+        
         # Override with values from passed module configuration, if any.
         if not moduleConfigData is None and isinstance(moduleConfigData, dict):
             if "pretty-print" in moduleConfigData:
@@ -73,4 +79,8 @@ class ModuleConfiguration(object):
                 self.objDir = moduleConfigData["object-dir"]
             if "mod-dir" in moduleConfigData:
                 self.modDir = moduleConfigData["mod-dir"]            
+            if "global-cache-filters" in moduleConfigData:
+                self.cacheFilters.update(moduleConfigData["global-cache-filters"])   
+            if "global-pack-filters" in moduleConfigData:
+                self.packFilters.update(moduleConfigData["global-pack-filters"])   
 

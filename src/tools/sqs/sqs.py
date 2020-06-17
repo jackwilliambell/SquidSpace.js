@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""                ====== SquiSpace.js SQS ======
+"""## SquidSpace.js SQS Command Runner
+
 SQS is the command runner for the SquidSpace.js tooling. The command format 
 is 'sqs.py command <what> [options ...]'. The commands are:
 
@@ -8,9 +9,9 @@ is 'sqs.py command <what> [options ...]'. The commands are:
              build.json file
 * package  - Performs a build and creates a distributable package specified 
              with a build.json file
-* filter   - Based on the file extension and configuration, runs a resource file 
-             through zero to many a pre-built filtering functions; file input and
-             output locations are configurable
+* filter   - Based on the file extension (or filter profile) and the configuration, 
+             runs a resource file through zero to many a pre-built filtering 
+             functions; file input and output locations are configurable
 * pipeline - Processes the asset pipeline specified by a module.json input file,
              including resource filtering and cacheing
 * scaffold - Creates a new SquidSpace.js project directory with default content
@@ -33,9 +34,9 @@ all module files in the current directory.)
 
 Usage:
   sqs.py generate <file>... [--config=<cfg>] [--dir=<path>]
-  sqs.py build <file>... [--config=<cfg>] [--dir=<path>]
+  sqs.py build <file>... [--config=<cfg>] [--dir=<path>] 
   sqs.py package <file>... [--config=<cfg>] [--dir=<path>]
-  sqs.py filter <file>... [--config=<cfg>] [--dir=<path>]
+  sqs.py filter <file>... [--config=<cfg>] [--dir=<path>] [--profile=<prf>]
   sqs.py pipeline <file>... [--config=<cfg>] [--dir=<path>]
   sqs.py scaffold <project-name> [--config=<cfg>] [--dir=<path>]
   sqs.py serve [--dir=<path>]
@@ -44,10 +45,11 @@ Usage:
   sqs.py --version
 
 Options:
-  -h --help      Show this help message
-  --version      Show version
-  --config <cfg> Module file to use for default configuration
-  --dir <path>   Working directory to use instead of current directory
+  -h --help       Show this help message
+  --version       Show version
+  --config <cfg>  Module file to use for default configuration
+  --dir <path>    Working directory to use instead of current directory
+  --profile <prf> Name of a filter profile to use instead of default for file type
   
 """
 
@@ -62,6 +64,8 @@ import sys
 import json
 from docopt import docopt
 from generate import runGenerate, __doc__ as generateDoc
+from filterfile import runFilter, __doc__ as filterDoc
+from pipeline import runPipeline, __doc__ as pipelineDoc
 from serve import runServer, __doc__ as serveDoc
 
 ver = "sqs v0.0"
@@ -108,9 +112,9 @@ if __name__ == '__main__':
     elif arguments['package']:
         print("Command 'package' not yet implemented.")
     elif arguments['filter']:
-        print("Command 'filter' not yet implemented.")
+        runFilter(defaultConfig, arguments['<file>'], arguments['<prf>'])
     elif arguments['pipeline']:
-        print("Command 'pipeline' not yet implemented.")
+        runPipeline(defaultConfig, arguments['<file>'])
     elif arguments['scaffold']:
         print("Command 'scaffold' not yet implemented.")
     elif arguments['serve']:
@@ -119,6 +123,10 @@ if __name__ == '__main__':
         cmd = arguments['<command>'].lower()
         if cmd == 'generate':
             print(generateDoc)
+        elif cmd == 'filter':
+            print(filterDoc)
+        elif cmd == 'pipeline':
+            print(pipelineDoc)
         elif cmd == 'serve':
             print(serveDoc)
         else:

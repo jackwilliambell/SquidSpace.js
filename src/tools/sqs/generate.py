@@ -1,4 +1,5 @@
-"""                ====== SquidSpace.js Generate ======
+"""## SquidSpace.js Generate Command
+
 The SquidSpace.js 'generate' command reads in a 'module' file containing JSON data meeting the 
 Module File Specification and using the SquidSpace.js Module File extensions. Then, with 
 that data, it generates a Javascript module containing the everything specified in the module
