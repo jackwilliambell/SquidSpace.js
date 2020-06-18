@@ -17,7 +17,8 @@ import sys
 import os
 import json
 
-from common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqs.common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqs.sqslogger import logger
 
 def processModuleFile(defaultConfig, moduleFile):
     pass
@@ -33,14 +34,14 @@ def runPipeline(defaultConfig, moduleFileNames):
     for moduleFileName in moduleFileNames:
         if not moduleFileName is None and not moduleFileName == "":
             # Use passed Module File name.
-            print("Module File: " + moduleFileName);print("")
+            logger.info("Module File: " + moduleFileName)
             try:
                 moduleFile = open(moduleFileName)
             except:
                 print("Error reading Module File:", sys.exc_info()[1])
         else:
             # Use stdin if no file name.
-            print("Reading module data from STDIN.");print("")
+            logger.info("Reading module data from STDIN.")
             moduleFile = sys.stdin
 
         if not moduleFile is None:    

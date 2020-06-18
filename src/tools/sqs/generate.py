@@ -18,7 +18,8 @@ import sys
 import os
 import json
 
-from common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqs.common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqs.sqslogger import logger
 
 ## TODO: insertBinary() and insertBinaryFile(), doing some kind of binary-to-text conversion.
 

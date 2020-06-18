@@ -63,10 +63,11 @@ from os import chdir, path
 import sys
 import json
 from docopt import docopt
-from generate import runGenerate, __doc__ as generateDoc
-from filterfile import runFilter, __doc__ as filterDoc
-from pipeline import runPipeline, __doc__ as pipelineDoc
-from serve import runServer, __doc__ as serveDoc
+from sqs.sqslogger import initSqsLogger
+from sqs.generate import runGenerate, __doc__ as generateDoc
+from sqs.filterfile import runFilter, __doc__ as filterDoc
+from sqs.pipeline import runPipeline, __doc__ as pipelineDoc
+from sqs.serve import runServer, __doc__ as serveDoc
 
 ver = "sqs v0.0"
 
@@ -74,8 +75,11 @@ ver = "sqs v0.0"
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=ver)
     
-    # Debug.
-    #print(arguments)
+    # TODO: Support command line options for log level and log file.
+    logger = initSqsLogger(True, True, None)
+    #logger = initSqsLogger(False, False, None)
+    
+    logger.debug("SQS starting. Args: \n{args}".format(args = arguments))
     
     # Change working directory?
     if arguments['--dir'] != None:
@@ -94,13 +98,12 @@ if __name__ == '__main__':
         try:
             configFile = open(configFileName)
             defaultConfig = json.load(configFile)["config"]
-            # Debug.
-            #print(defaultConfig)
+            logger.debug("SQS default config: {defaultConfig}".format(defaultConfig))
         except json.JSONDecodeError:
-            print("Error loading Configuration Module File:", sys.exc_info()[1])
+            logger.exception("Failed to load Configuration Module File:", sys.exc_info()[1])
             sys.exit(1)
     elif argFileName:
-        print("Error loading Configuration Module File: '" + configFileName + "' does not exist.")
+        logger.error("Failed to load Configuration Module File: '" + configFileName + "' does not exist.")
         sys.exit(1)
     
     # Process command.
@@ -108,15 +111,15 @@ if __name__ == '__main__':
     if arguments['generate']:
         runGenerate(defaultConfig, arguments['<file>'])
     elif arguments['build']:
-        print("Command 'build' not yet implemented.")
+        logger.warning("Command 'build' not yet implemented.")
     elif arguments['package']:
-        print("Command 'package' not yet implemented.")
+        logger.warning("Command 'package' not yet implemented.")
     elif arguments['filter']:
         runFilter(defaultConfig, arguments['<file>'], arguments['<prf>'])
     elif arguments['pipeline']:
         runPipeline(defaultConfig, arguments['<file>'])
     elif arguments['scaffold']:
-        print("Command 'scaffold' not yet implemented.")
+        logger.warning("Command 'scaffold' not yet implemented.")
     elif arguments['serve']:
         runServer()
     elif arguments['explain']:
@@ -130,8 +133,8 @@ if __name__ == '__main__':
         elif cmd == 'serve':
             print(serveDoc)
         else:
-            print("No valid command supplied. Try 'sqs.py -h'.")
+            logger.warning("No valid command supplied. Try 'sqs.py -h'.")
             sys.exit(1)
     else:
-        print("No valid command supplied. Try 'sqs.py -h'.")
+        logger.warning("No valid command supplied. Try 'sqs.py -h'.")
         sys.exit(1)

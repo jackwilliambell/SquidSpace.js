@@ -1,4 +1,16 @@
-"""Removes unhelpful or unneeded data sections from .babylon files.
+"""## cleanbabylon.py – SQS Filter for cleaning .babylon files
+
+Removes unhelpful or unneeded data sections from .babylon files. At this time 
+there are no options supported.
+
+Besides the standard filter() function there are two API functions:
+
+* cleanData(data) - Cleans a dictionary containing a parsed .babylon file
+
+* processDirectory(pathIn, pathOut, recurse) - Cleans all .babylon files in 
+  the directory specified with pathIn, writing the files out to pathOut. If
+  pathIn and pathOut are the same it will operate destructively, overwriting
+  the files.
 """
 
 
@@ -10,8 +22,9 @@ assets, are copyright their respective authors."""
 import sys
 import os
 import json
+from sqs.sqslogger import logger
 
-
+    
 def cleanData(data):
     dirty = False
     
@@ -43,16 +56,30 @@ def cleanData(data):
     return dirty
 
 
-def processFile(pathIn, pathOut):
+def processDirectory(pathIn, pathOut, recurse):
+    logger.debug("cleanbabylon.processDirectory() - Processing pathIn: {pathIn} pathOut: {pathOut} recurse: {recurse}".format(pathIn, pathOut, recurse))
+
+    for item in os.listdir(path):
+        if os.path.isdir(item):
+            if recurse:
+                processDirectory(item, recurse)
+        else:
+            filter(os.path.join(pathIn, item), os.path.join(pathOut, item))
+
     # DEBUG: Comment out for production.
-    #print("Processing file: " + filePath);print("")
+    #print("Path processing complete.")
+
+
+def filter(pathIn, pathOut, options):
+    # NOTE: Currently supports no options.
+    logger.debug("cleanbabylon.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(pathIn, pathOut, options))
+    
+    # Assume failure.
+    result = False
     
     # Is it a .babylon file?
     name, ext = os.path.splitext(pathIn)
-    if ext == ".babylon":
-        # DEBUG: Comment out for production.
-        #print("Babylon file: " + pathIn);print("")
-        
+    if ext == ".babylon":    
         try:
             # Load Babylon file
             with open(pathIn, 'r') as babFile:
@@ -62,11 +89,11 @@ def processFile(pathIn, pathOut):
             # Try to clean the data.
             if cleanData(data):
                 # DEBUG: Comment out for production.
-                print("Babylon was cleaned.");print("")
+                #print("Babylon was cleaned.");print("")
                 pass
             else:
                 # DEBUG: Comment out for production.
-                print("Babylon did not require cleaning.");print("")
+                #print("Babylon did not require cleaning.");print("")
                 pass
             try:
                 # Write it back out.
@@ -75,40 +102,11 @@ def processFile(pathIn, pathOut):
                     json.dump(data, babFile)
                     close(babFile)
                 # DEBUG: Comment out for production.
-                print("Babylon file cleaned.");print("")
+                #print("Babylon file cleaned.");print("")
+                return = True
             except Exception:
-                # TODO: Upgrade error handling and pass exception up.
-                print("Error writing .babylon file:", sys.exc_info()[1])
+                logger.exception("shellexec.filter() - Command '{command}' failed to write output.".format(command)
         except json.JSONDecodeError:
-            # TODO: Pass exception up, do not handle here.
-            print("Error loading .babylon file:", sys.exc_info()[1])
+            logger.error("shellexec.filter() - Command '{command}' failed to parse the .babylon file.".format(command)
 
-
-def processDirectory(pathIn, pathOut, recurse):
-    # DEBUG: Comment out for production.
-    print("Processing path: " + path);print("")
-
-    for item in os.listdir(path):
-        if os.path.isdir(item):
-            if recurse:
-                processDirectory(item, recurse)
-        else:
-            processFile(os.path.join(pathIn, item), os.path.join(pathOut, item))
-
-    # DEBUG: Comment out for production.
-    print("Path processing complete.")
-    
-def filter(pathIn, pathOut, options):
-    # TODO: Make some processing optional, including 'recurse' and 'packed'.
-    recurse = False
-    
-    # TODO: Error handling.
-    if os.path.isdir(pathIn):
-        if os.path.isdir(pathOut)
-            processDirectory(pathIn, pathOut, recurse)
-        else:
-            # TODO: Upgrade error handling and pass exception up.
-            pass
-    else:
-        processFile(pathIn, pathOut)
-        
+    return result
