@@ -2,13 +2,15 @@
 
 .DS_Store
 
-# Build directory
+# Wiki Backups
 
-/build
+notes/*.html_backup
 
-#
-# Javascript ignores.
-#
+# Generated files
+
+libs/objects/*.js
+__pycache__/
+*.pyc
 
 # Logs
 logs
