@@ -160,3 +160,113 @@ TODO: Document with examples.
 ## Using the SQS Tools as Components
 
 TODO: Document with examples.
+
+
+## Filter Functions
+
+Filter Functions are used by the filter, generate, and pipeline commands to process files in various ways by passing them through one or more filter operations. There are 'built-in' Filter Functions provided as part of the SQS tool, but it is also possible to implement your own 'plugin' filter functions, which are loaded at runtime.
+
+TODO: Plugin filters not currently implemented.
+
+Filter Functions consist of Python modules exporting two required functions:
+
+* filterFileExtensions(options, data) – Returns a tuple of (in-extension, out-extension) based on the filter implementation and the parameters
+
+* filter(pathIn, pathOut, options, data) – Performs the filtering operation based on the filter implementation and parameters and returns 'true' if the operation is successful or 'false' if the operation failed
+
+Filters specify valid input and output file extensions via the filterFileExtensions() function. What extension used for the output file may be different from the input file if the filter changes the file type during it's operation. If the expected input extension is provided as 'None', then any file type is allowed. If the output file extension is provided as 'None', then the output file extension must be the same as the input file extension. 
+
+Filters that can accept different input file types and write out different file types a common pattern is to allow "in-ext" and "out-ext" in the filter options, which may be specified by the user, and then process them as follows:
+
+	def filterFileExtensions(options, data):
+	    inExt = None
+	    outExt = None
+	    if "in-ext" in options:
+	        inExt = options["in-ext"]
+	    if "out-ext" in options:
+	        outExt = options["out-ext"]
+    
+	    return (inExt, outExt)
+
+ Filters do the actual filtering operation via the filter() function. How the function works and what information it requires in it's options and data values are implementation dependent. But in all cases the filter function must read in the file specified with the path in and write out a file specified with the path out. If the filter operation is successful the function must return 'true'. Otherwise it must return 'false', whether or not data is written to the output file.
+ 
+### Built-In Filter Functions
+ 
+ The Filter Function modules provided with SQS include:
+ 
+ * cleanbabylon – Removes unhelpful or unneeded data sections from .babylon files
+ 
+ * shellexec – Passes a file to a shell command for filtering using a template command
+ 
+#### cleanbabylon Filter Function Module
+
+Removes unhelpful or unneeded data sections from .babylon files. 
+
+Besides the standard filter() and filterFileExtensions() function there are two API functions:
+
+* cleanData(data) - Cleans a dictionary containing a parsed .babylon file
+
+* processDirectory(pathIn, pathOut, recurse) - Cleans all .babylon files in 
+  the directory specified with pathIn, writing the files out to pathOut. If
+  pathIn and pathOut are the same it will operate destructively, overwriting
+  the files.
+
+Options: None.
+
+Data: None.
+
+File Extensions:
+
+* in – .babylon
+
+* out – .babylon
+
+ 
+#### cleanbabylon Filter Function Module
+
+Passes a file to a shell command for filtering. The options argument must contain a value
+named 'command-template' consisting of a template string with the command to execute. 
+The options may also contain a value named 'command-arguments' consisting of a JSON object
+with named argument values to apply to the template.
+
+The template string is a standard Python string.format() template with two specified 
+template values: '{pathIn}' and '{pathOut}', which are replaced by the pathIn and
+pathOut parameters. If 'command-arguments' is also supplied, any names from that value
+may also be used as template values.
+
+The expectation of any command used as a filter is as follows: the command will
+read in pathIn, make changes to it, and write the result out to pathOut. Commands which 
+do not support this paradigm are not usable as filters.
+
+There is no direct support for mapping the pathIn and pathOut parameters to STDIN 
+and STDOUT for commands supporting that usage. However, it is possible to map them in the
+template string using redirection. It is also possible to support multiple commands using
+pipes.
+
+No attempt is made to suppress STDOUT and STDERR output from the command, so command output
+will be written to the terminal during execution unless redirected in the template string.
+
+If the command completes with a '0' exit status the filter returns True. Otherwise the filter 
+prints the exit status and returns False.
+
+Options: 
+
+* "in-ext" – [optional, string] Specifies the expected input file extension; do not use if
+  the input file type is determined by its extension 
+
+* "out-ext" – [optional, string] Specifies the expected output file extension; do not use if
+  the output file type will be the same as the input file type 
+
+* "command-template" [required, string] Specifies the command template string as described above
+
+* "command-arguments" [optional, string] Specifies command arguments which may be replaced 
+  by name in the command template string as described above
+
+Data: None.
+
+File Extensions: Determined by option values.
+
+### Plug-In Filter Functions
+
+TODO: Implement.
+

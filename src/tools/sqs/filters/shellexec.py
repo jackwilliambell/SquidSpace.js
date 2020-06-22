@@ -24,7 +24,23 @@ will be written to the terminal during execution unless redirected in the templa
 
 If the command completes with a '0' exit status the filter returns True. Otherwise the filter 
 prints the exit status and returns False.
-"""
+
+Options: 
+
+* "in-ext" – [optional, string] Specifies the expected input file extension; do not use if
+  the input file type is determined by its extension 
+
+* "out-ext" – [optional, string] Specifies the expected output file extension; do not use if
+  the output file type will be the same as the input file type 
+
+* "command-template" [required, string] Specifies the command template string as described above
+
+* "command-arguments" [optional, string] Specifies command arguments which may be replaced 
+  by name in the command template string as described above
+
+Data: None.
+
+File Extensions: Determined by option values."""
 
 
 copyright = """SquidSpace.js, the associated tooling, and the documentation are copyright 
@@ -33,11 +49,26 @@ assets, are copyright their respective authors."""
 
 
 import subprocess
-from sqs.sqslogger import logger
+from sqslogger import logger
 
 
-def filter(pathIn, pathOut, options):
-    logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(pathIn=pathIn, pathOut=pathOut, **options))
+def filterFileExtensions(options, data):
+    inExt = None
+    outExt = None
+    if "in-ext" in options:
+        inExt = options["in-ext"]
+    if "out-ext" in options:
+        outExt = options["out-ext"]
+    
+    return (inExt, outExt)
+    
+
+def filter(pathIn, pathOut, options, data):
+    logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(
+            pathIn=pathIn, pathOut=pathOut, **options))
+    
+    # TODO: Determine if we want to verify the path in/out file extensions based on the result 
+    #       from filterFileExtensions().
     
     # Create the command to execute.
     command = None
@@ -58,9 +89,11 @@ def filter(pathIn, pathOut, options):
     try:
         retcode = subprocess.call(command, shell=True)
         if retcode < 0:
-            logger.error("shellexec.filter() - Command '{0}' was terminated by a signal. Return code: {1}.".format(command, -retcode))
+            logger.error("shellexec.filter() - Command '{0}' was terminated by a signal. Return code: {1}.".format(
+                    command, -retcode))
         elif retcode != 0:
-            logger.error("shellexec.filter() - Command '{0}' was terminated by a signal. Return code: {1}.".format(command, retcode))
+            logger.error("shellexec.filter() - Command '{0}' was terminated by a signal. Return code: {1}.".format(
+                    command, retcode))
     except OSError:
             logger.exception("shellexec.filter() - Command '{0}' failed with an exception.".format(command))
     

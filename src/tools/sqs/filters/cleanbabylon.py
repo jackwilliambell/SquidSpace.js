@@ -1,9 +1,8 @@
 """## cleanbabylon.py – SQS Filter for cleaning .babylon files
 
-Removes unhelpful or unneeded data sections from .babylon files. At this time 
-there are no options supported.
+Removes unhelpful or unneeded data sections from .babylon files. 
 
-Besides the standard filter() function there are two API functions:
+Besides the standard filter() and filterFileExtensions() function there are two API functions:
 
 * cleanData(data) - Cleans a dictionary containing a parsed .babylon file
 
@@ -11,6 +10,16 @@ Besides the standard filter() function there are two API functions:
   the directory specified with pathIn, writing the files out to pathOut. If
   pathIn and pathOut are the same it will operate destructively, overwriting
   the files.
+
+Options: None
+
+Data: None
+
+File Extensions:
+
+* in – .babylon
+
+* out – .babylon
 """
 
 
@@ -22,7 +31,7 @@ assets, are copyright their respective authors."""
 import sys
 import os
 import json
-from sqs.sqslogger import logger
+from sqslogger import logger
 
     
 def cleanData(data):
@@ -69,8 +78,10 @@ def processDirectory(pathIn, pathOut, recurse):
     # DEBUG: Comment out for production.
     #print("Path processing complete.")
 
+def filterFileExtensions(options, data):
+    return (".babylon", ".babylon")
 
-def filter(pathIn, pathOut, options):
+def filter(pathIn, pathOut, options, data):
     # NOTE: Currently supports no options.
     logger.debug("cleanbabylon.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(pathIn, pathOut, options))
     
@@ -79,34 +90,29 @@ def filter(pathIn, pathOut, options):
     
     # Is it a .babylon file?
     name, ext = os.path.splitext(pathIn)
-    if ext == ".babylon":    
+    if ext == ".babylon":
         try:
             # Load Babylon file
             with open(pathIn, 'r') as babFile:
                 data = json.load(babFile)
                 close(babFile)
-                
+            
             # Try to clean the data.
             if cleanData(data):
-                # DEBUG: Comment out for production.
-                #print("Babylon was cleaned.");print("")
-                pass
+                logger.debug("Babylon file was cleaned.")
             else:
-                # DEBUG: Comment out for production.
-                #print("Babylon did not require cleaning.");print("")
-                pass
+                logger.debug("Babylon file did not require cleaning.")
             try:
                 # Write it back out.
                 # TODO: This writes it packed, do we want a 'pretty print' option?
                 with open(pathOut, 'w') as babFile:
                     json.dump(data, babFile)
                     close(babFile)
-                # DEBUG: Comment out for production.
-                #print("Babylon file cleaned.");print("")
-                return = True
-            except Exception:
-                logger.exception("shellexec.filter() - Command '{command}' failed to write output.".format(command)
-        except json.JSONDecodeError:
-            logger.error("shellexec.filter() - Command '{command}' failed to parse the .babylon file.".format(command)
-
+                logger.debug("Babylon file written out.")
+                result = True
+            except:
+                logger.exception("shellexec.filter() - Command '{command}' failed to write output.".format(command))
+        except:
+            logger.exception("shellexec.filter() - Command '{command}' failed to parse the .babylon file.".format(command))
+    
     return result

@@ -128,15 +128,15 @@ In the above example the "placer" value is a reference to the "BarPlacer" Hook F
 
 ### Filter Declarations
 
-Filter declarations specify a series of filters through which data files are passed in order. Each filter declaration consists of the following:
+Filter declarations consist of a JSON array specifying a series of filter specifications through which data files are passed in order. Each filter specification declaration consists of the following:
 
 * "filter" – [required; string] – The name of the filter function to use
 
-* "options" – [optional; JSON object] – Options sent to the filter function when it is invoked
+* "options" – [optional; JSON object] – Options sent to the filter function when it is invoked, the contents of which are determined by the filter function implementation
 
-* "data" – [optional; any] – Data value sent to the filter function when it is invoked
+* "data" – [optional; any] – Data value sent to the filter function when it is invoked, the contents of which are determined by the filter function implementation
 
-When the tools execute the named filter function they pass the options and data values, along with the input and output file paths to use.  
+When the tools execute the named filter function they pass the options and data values, along with the input and output file paths to use. For each set of filter declarations, every filter in the set is called once, in the supplied order, with the last filter providing the output of the filtering operation.
 
 ## Global Level 
 
@@ -150,32 +150,30 @@ Global Configuration must be of type JSON object. The Global Configuration in th
 
 The Global Configuration contains general configuration for the entire project:
 
-* "out-dir" – [optional; string] – Directory used for code generators output files; may be overridden for individual modules; default value depends on the tool reading the Module File
+* "build-dir" – [optional; string] – Directory used for build output files; may be overridden for individual modules; defaults to "build/"
 
-* "scratch-dir" – [optional; string] – Directory used for scratch files when processing filters or doing other operations requiring intermediate files; default value depends on the tool reading the Module File
+* "generate-dir" – [optional; string] – Directory used for code generator output files; may be overridden for individual modules; defaults to "libs/modules" 
 
-* "texture-dir" – [optional; string] – Directory containing textures to import; can be overridden for individual textures; default value depends on the tool reading the Module File
+* "texture-dir" – [optional; string] – Directory containing textures to import; can be overridden for individual textures; defaults to "assets/textures/"
 
-* "material-dir" – [optional; string] – Directory containing materials to import; can be overridden for individual materials; default value depends on the tool reading the Module File
+* "material-dir" – [optional; string] – Directory containing materials to import; can be overridden for individual materials; defaults to "assets/materials/"
 
-* "object-dir" – [optional; string] – Directory containing objects to import; can be overridden for individual objects; default value depends on the tool reading the Module File
+* "object-dir" – [optional; string] – Directory containing objects to import; can be overridden for individual objects; defaults to "assets/objects/"
 
-* "mod-dir" – [optional; string] – Directory containing mods or other Javascript files to import; can be overridden for individual mods; default value depends on the tool reading the Module File
+* "mod-dir" – [optional; string] – Directory containing mods or other Javascript files to import; can be overridden for individual mods; defaults to "assets/mods/"
 
 * "pretty-print" – [optional; boolean; default is false] – If true, all module not specifying otherwise are formatted to be readable, using the "pretty-offset" value for formatting; if false the module is "packed"; can be overridden for individual modules
 
 * "pretty-offset" – [optional; positive integer or zero; default is "3"] – The number of spaces to offset when pretty printing; can be overridden for individual modules
 
-* "global-cache-filters" – [optional; JSON object; default is none] – Specifies cache-filters keyed by profile name or file extension, where the values are standard resource "cache-filters", See Standard Resource Configuration
-
-* "global-pack-filters" – [optional; JSON object; default is none] – Specifies pack-filters keyed by profile name or file extension, where the values are standard resource "pack-filters", See Standard Resource Configuration
+* "filter-profiles" – [optional; JSON object; default is none] – Specifies arrays of global filter declarations keyed by profile name, See Standard Resource Configuration, Filter Declarations
 
 Example:
 
 	{
 		"doc": "Top level.",
 		"config": {
-			"Global configuration."
+			"doc": "Global configuration.",
 			"out-dir": "build/",
 			"texture-dir": "assets/textures/",
 			"material-dir": "assets/materials/",
@@ -183,8 +181,8 @@ Example:
 			"mod-dir": "supportlibs/mods/",
 			"pretty-print": true,
 			"pretty-offset": 3
-			"global-cache-filters": {
-				".foo": [
+			"filter-profiles": {
+				"fooprofile": [
 					{
 						"filter": "FooFilter",
 						"options": {
@@ -193,10 +191,8 @@ Example:
 						"data": "Filter data"
 					},
 					. . . Other filter declarations.
-				]
-			},
-			"global-pack-filters": {
-				".bar": [
+				],
+				"barprofile": [
 					{
 						"filter": "BarFilter",
 						"options": {
@@ -206,8 +202,9 @@ Example:
 					},
 					. . . Other filter declarations.
 				]
+				. . . Other filter profiles.
 			}
-			. . . Other configuration values.
+			. . . Other global configuration values.
 		},
 		. . . Other module values.
 	}
@@ -241,7 +238,7 @@ Example:
 			"materials": [
 				. . . Zero or more material resources.
 			],
-			"object": [
+			"objects": [
 				. . . Zero or more object resources.
 			],
 			"mods": [
@@ -302,13 +299,13 @@ All resource configuration subsections provide the following standard resource c
 * "cache-options" – [optional; JSON object] – Specifies file cacheing options for the resource; default is no cacheing (local file resource only), options are:
 	- "file-source" – [optional; string containing a fully-qualified file path, do not use if "url-source" is specified] – Specifies the source of the data to cache
 	- "url-source" – [optional; string containing a fully-qualified URL, do not use if "file-source" is specified] – Specifies the source of the data to cache
-	- "cache-filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied; defaults to "global-cache-filters" for the file extension, see Global Configuration] – Specifies filters to apply to the resource when it is being cached
-	- "filter-profile" – [optional; string, do not use if "cache-filters" is supplied] – Specifies a filter-profile name from the global options, which will be used to determine the cache filters for the resource instead of using the file name extension
+	- "filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied] – Specifies filters apply to the resource when it is being cached
+	- "filter-profile" – [optional; string, do not use if "filters" is supplied] – Specifies a filter profile name from the global options "filter-profiles" to apply to the resource when it is being cached
 
 * "pack-options" – [optional; JSON object] – Specifies file packing options for the resource; default is no packing (use "data" value as-is), options are:
 	- "action": [optional; string containing one of "none", "insert", "link"] – Specifies file packing options for the resource; default is "none"
-	- "pack-filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied; defaults to "global-pack-filters" for the file extension; defaults to "global-pack-filters" for the file type, see Global Configuration] – Specifies filters to apply to the resource when it is being packed
-	- "filter-profile" – [optional; string, do not use if "pack-filters" is supplied] – Specifies a filter-profile name from the global options, which will be used to determine the pack filters for the resource instead of using the file name extension
+	- "filters" – [optional; JSON array of Filter Declarations, do not use if "filter-profile" is supplied] – Specifies filters to apply to the resource when it is being packed
+	- "filter-profile" – [optional; string, do not use if "filters" is supplied] – Specifies a filter profile name from the global options "filter-profiles" to apply to the resource when it is being packed
 
 * "dir" – [optional; string; use only if "file-name" is also specified] – Directory containing the file resource; overrides the global "dir" value for the resource section; when doing cacheing also specifies the directory the file is cached in
 
@@ -324,7 +321,7 @@ Examples:
 
 	"textures": [
 		{
-			"name": "foo",
+			"resource-name": "foo",
 			"config": {
 				"doc": "No cache, no pack. (Default.) No 'config' subsection results in same behaviour.",
 				"pack-options": {
@@ -334,7 +331,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "bar",
+			"resource-name": "bar",
 			"config": {
 				"doc": "No cache, local link.",
 				"pack-options": {
@@ -345,7 +342,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "barinsert",
+			"resource-name": "barinsert",
 			"config": {
 				"doc": "No cache, insert local file.",
 				"pack-options": {
@@ -356,7 +353,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "barcachelink",
+			"resource-name": "barcachelink",
 			"config": {
 				"doc": "Cache, local link. Local source.",
 				"cache-options": {
@@ -370,7 +367,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "barcacheinsert",
+			"resource-name": "barcacheinsert",
 			"config": {
 				"doc": "Cache, insert cached file.",
 				"cache-options": {
@@ -384,7 +381,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "baz",
+			"resource-name": "baz",
 			"config": {
 				"doc": "No cache, remote link.",
 				"pack-options": {
@@ -395,7 +392,7 @@ Examples:
 			. . . Other texture values.
 		},
 		{
-			"name": "bazcachelink",
+			"resource-name": "bazcachelink",
 			"config": {
 				"doc": "Cache, local link. Remote source.",
 				"cache-options": {

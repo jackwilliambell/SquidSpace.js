@@ -14,7 +14,7 @@ the most common usage pattern is:
 import logging
 
 
-SQS_LOGGER_NAME = 'SQS'
+SQS_LOGGER_NAME = 'SQS_LOGGER'
 
 
 def makeLogger(lName, consoleLevel, fileLevel, logFilePath):
@@ -47,7 +47,7 @@ def initSqsLogger(consoleVerbose, fileVerbose, logFilePath):
     prepared by the makeLogger() function.
     
     WARNING: Do not call twice in one process. All calls to this function after
-             the first one are ignored other than a warning message."""
+             the first one are ignored, aside from a warning message."""
     logr = getSqsLogger()
     
     # We only want to initialize one time. After that it's an error.

@@ -17,13 +17,94 @@ import sys
 import os
 import json
 
-from sqs.common import ResourceFlavor, ResourceAction, ModuleConfiguration
-from sqs.sqslogger import logger
+from common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqslogger import logger
+
+
+def processPipelineForResource(resourceFlavor, elem, modConfig):
+    """Processes the pipeline for one resource file element."""
+    if not "cache-options" in elem:
+        # No need to process!
+        return true
+        
+    
+
+
+def processModuleData(defaultConfig, moduleData):
+    """Processes the Module Data to manage an asset pipeline."""
+    
+    #logger.debug("pipeline.processModuleData() - Processing module data %{0}s.".format(moduleData))
+    logger.debug("pipeline.processModuleData() - Processing pipeline for module: " + module["module-name"])
+    
+    # Get module configuration.
+    moduleConfig = {} # Default config is empty dict.
+    if "config" in module:
+        moduleConfig = module["config"]
+        
+    # Create the module processing configuration.
+    modConfig = ModuleConfiguration(defaultConfig, moduleConfig)
+    
+    # Process resouces.
+    if "resources" in module:
+        resources = module["resources"]
+        
+        # Process texture resouces.
+        if "textures" in resources:
+            for texture in resources["textures"]:
+                processPipelineForResource(ResourceFlavor.TEXTURE, texture, modConfig)
+            
+        # Process material resouces.
+        if "materials" in resources:
+            for material in resources["materials"]:
+                processPipelineForResource(ResourceFlavor.MATERIAL, material, modConfig)
+    
+        # Process object resouces.
+        if "objects" in resources:
+            for obj in resources["objects"]:
+                processPipelineForResource(ResourceFlavor.OBJECT, obj, modConfig)
+        
+        # Process mod resouces.
+        if "mods" in resources:
+            for mod in resources["mods"]:
+                processPipelineForResource(ResourceFlavor.MOD, mod, modConfig)
+
+    logger.debug("pipeline.processModuleData() - Processing complete.")
+
+
+def processModuleString(defaultConfig, moduleDataString):
+    """Loads JSON Module Data from a string and processes it."""
+
+    # Assume failure.
+    moduleData = None
+    
+    try:
+        moduleData = json.loads(moduleDataString)
+    except json.JSONDecodeError:
+        logger.exception("pipeline.processModuleString() - Could not load pack string.")
+        return
+        
+    if not moduleData is None:    
+        processModuleData(defaultConfig, moduleData)
+        
 
 def processModuleFile(defaultConfig, moduleFile):
-    pass
+    """Loads JSON module data from a file and processes it."""
+        
+    # Assume failure.
+    moduleData = None
+    
+    try:
+        moduleData = json.load(moduleFile)
+    except json.JSONDecodeError:
+        logger.exception("pipeline.processModuleFile() - Error loading Module File.")
+        return
+        
+    if not moduleData is None:    
+        processModuleData(defaultConfig, moduleData)
+
 
 def runPipeline(defaultConfig, moduleFileNames):
+    """SQS pipeline command."""
     # Assume Failure.
     moduleFile = None
 
@@ -34,14 +115,14 @@ def runPipeline(defaultConfig, moduleFileNames):
     for moduleFileName in moduleFileNames:
         if not moduleFileName is None and not moduleFileName == "":
             # Use passed Module File name.
-            logger.info("Module File: " + moduleFileName)
+            logger.debug("pipeline.runPipeline() - Module File: " + moduleFileName)
             try:
                 moduleFile = open(moduleFileName)
             except:
-                print("Error reading Module File:", sys.exc_info()[1])
+                logger.exception("pipeline.runPipeline() - Error reading Module File.")
         else:
             # Use stdin if no file name.
-            logger.info("Reading module data from STDIN.")
+            logger.debug("pipeline.runPipeline() - Reading module data from STDIN.")
             moduleFile = sys.stdin
 
         if not moduleFile is None:    

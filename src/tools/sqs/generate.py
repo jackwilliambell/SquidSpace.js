@@ -5,6 +5,12 @@ Module File Specification and using the SquidSpace.js Module File extensions. Th
 that data, it generates a Javascript module containing the everything specified in the module
 file, including external data files 'packed' into the Javascript module.
 
+TODO: Insert binary file support with BASE-64 conversion.
+
+TODO: Support binary strings and expression strings.
+
+TODO: Support events and mods.
+
 For more information on Module Files and SquidSpace.js, please refer to the documentation 
 located in the project repo at https://github.com/jackwilliambell/SquidSpace.js"""
 
@@ -18,10 +24,9 @@ import sys
 import os
 import json
 
-from sqs.common import ResourceFlavor, ResourceAction, ModuleConfiguration
-from sqs.sqslogger import logger
 
-## TODO: insertBinary() and insertBinaryFile(), doing some kind of binary-to-text conversion.
+from common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from sqslogger import logger
 
 
 def insertTextFile(inFilePath, outFile, singleLine = True):
@@ -43,11 +48,6 @@ def insertText(text, outFile, singleLine = True):
         outFile.write(text.replace('\n', '\\n').replace('"', '\\"'))
     else:
         outFile.write(text.replace('"', '\\"'))
-
-    
-def insertReturnLinkLoaderFunc(func, link, outFile, modConfig, singleLine = True):
-    """ TODO """
-    pass
 
 
 def insertValue(value, outFile, modConfig, baseOffset, singleLine = True):
@@ -287,15 +287,15 @@ def insertEventsData(elem, outFile, modConfig, baseOffset):
      if modConfig.pp: outFile.write("\n" + baseOffset)
      outFile.write("},") 
     
-def processModule(defaultConfig, module):
-    """Processes one module's elements and generates a module file."""
     
+def processModuleData(defaultConfig, moduleData):
+    """Processes the Module Data to generate a module file."""
+    
+    #logger.debug("generate.processModuleData() - Processing module data %{0}s.".format(moduleData))
+    logger.debug("generate.processModuleData() - Writing module: " + module["module-name"])
+                
     # TODO: Improve error handling. Need to decide if we wrap everything in a try-catch or
-    # do it line-by-line. 
-    
-    # DEBUG: Comment out for production.
-    #print(module);print("")
-    print("Writing module: " + module["module-name"]);print("")
+    # do it line-by-line.     
     
     # Get module configuration.
     moduleConfig = {} # Default config is empty dict.
@@ -306,7 +306,7 @@ def processModule(defaultConfig, module):
     modConfig = ModuleConfiguration(defaultConfig, moduleConfig)
     
     # Open module output file.
-    mf = open(modConfig.outDir + module["module-name"].lower() + ".js", "w")
+    mf = open(modConfig.genDir + module["module-name"].lower() + ".js", "w")
     
     # Write module start.
     mf.write("var " + module["module-name"] + " = (function(){")
@@ -323,7 +323,7 @@ def processModule(defaultConfig, module):
         resources = module["resources"]
         
         # Process texture resouces.
-        if "textures" in module:
+        if "textures" in resources:
             if modConfig.pp: mf.write("\n" + baseOffset)
             mf.write("textures: {")
             for texture in resources["textures"]:
@@ -332,7 +332,7 @@ def processModule(defaultConfig, module):
             mf.write("},")
             
         # Process material resouces.
-        if "materials" in module:
+        if "materials" in resources:
             if modConfig.pp: mf.write("\n" + baseOffset)
             mf.write("materials: {")
             for material in resources["materials"]:
@@ -378,21 +378,8 @@ def processModule(defaultConfig, module):
     
     # Clean up.
     mf.close()
-    
-    
-def processModuleData(defaultConfig, moduleData):
-    """Processes the Module Data to generate a module file."""
-    # TODO: Document module data.
-    
-    # DEBUG: Comment out for production.
-    print("Processing module data.");print("")
-    #print(moduleData);print("")
-                
-    # Write Module.
-    processModule(defaultConfig, moduleData)
 
-    # DEBUG: Comment out for production.
-    print("Processing complete.");print("")
+    logger.debug("generate.processModuleData() - Processing complete.")
 
 
 def processModuleString(defaultConfig, moduleDataString):
@@ -404,8 +391,8 @@ def processModuleString(defaultConfig, moduleDataString):
     try:
         moduleData = json.loads(moduleDataString)
     except json.JSONDecodeError:
-        # TODO: Pass exception up, do not handle here.
-        print("Could not load pack string.")
+        logger.exception("generate.processModuleString() - Could not load pack string.")
+        return
         
     if not moduleData is None:    
         processModuleData(defaultConfig, moduleData)
@@ -420,14 +407,15 @@ def processModuleFile(defaultConfig, moduleFile):
     try:
         moduleData = json.load(moduleFile)
     except json.JSONDecodeError:
-        # TODO: Pass exception up, do not handle here.
-        print("Error loading Module File:", sys.exc_info()[1])
+        logger.exception("generate.processModuleFile() - Error loading Module File.")
+        return
         
     if not moduleData is None:    
         processModuleData(defaultConfig, moduleData)
 
 
 def runGenerate(defaultConfig, moduleFileNames):
+    """SQS generate command."""
     # Assume Failure.
     moduleFile = None
 
@@ -438,14 +426,14 @@ def runGenerate(defaultConfig, moduleFileNames):
     for moduleFileName in moduleFileNames:
         if not moduleFileName is None and not moduleFileName == "":
             # Use passed Module File name.
-            print("Module File: " + moduleFileName);print("")
+            logger.debug("generate.runGenerate() - Module File: " + moduleFileName)
             try:
                 moduleFile = open(moduleFileName)
             except:
-                print("Error reading Module File:", sys.exc_info()[1])
+                logger.exception("generate.runGenerate() - Error reading Module File.")
         else:
             # Use stdin if no file name.
-            print("Reading module data from STDIN.");print("")
+            logger.debug("generate.runGenerate() - Reading module data from STDIN.")
             moduleFile = sys.stdin
 
         if not moduleFile is None:    

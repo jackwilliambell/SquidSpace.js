@@ -17,33 +17,91 @@ import sys
 import os
 import json
 
-from sqs.common import ResourceFlavor, ResourceAction, ModuleConfiguration
-from sqs.sqslogger import logger
 
-def processModuleFile(defaultConfig, moduleFile, filterProfile):
-    pass
+from common import getFilterFunction, ResourceFlavor, ResourceAction, ScratchDirManager
+from sqslogger import logger
 
-def runFilter(defaultConfig, moduleFileNames, filterProfile):
-    # Assume Failure.
-    moduleFile = None
 
-    # We expect to process a list of file names.
-    if not isinstance(moduleFileNames, list):
-        moduleFileNames = [moduleFileNames] # Force list.
+def filterFile(filters, pathIn, pathOut, scratchDirMgr):
+    """ TODO """
+    # TODO: Use ScratchDirManager for in/out files
+    inFile = None
+    outFile = pathIn
+    
+    for fd in filters:
+        # Get file names.
+        inFile = outfile
+        outFile = '' # from scratch.
         
-    for moduleFileName in moduleFileNames:
-        if not moduleFileName is None and not moduleFileName == "":
+        # Get filter function
+        filterFunc = getFilterFunction(fd["filter"])
+        
+        # Execute the filter function
+        if filterFunc != None:
+            result = filterFunc(inFile, outFile, fd["options"], fd["data"])
+            if not result:
+                # TODO: Error message.
+                return False
+        else:
+            # TODO: Error message.
+            return False
+    
+    # TODO: Copy last 'outFile' to pathOut
+    # TODO: Clear the scratch?
+
+    # Success!
+    return True
+
+
+def filterFileWithConfig(defaultConfig, filters, filterProfile, pathIn, pathOut, scratchDirMgr):
+    """ TODO """
+    # Were we passed a set of filters?
+    if filters == None:
+        # Is the filter profile useful?
+        if filterProfile in defaultConfig.filterProfiles:
+            # Use the default filters for the filter profile.
+            filters = defaultConfig.filterProfiles[filterProfile]
+        else:
+            logger.error(
+                "filterfile.filterFileWithConfig() - Could not find filter declarations for filter profile: {0}.".format(filterProfile))
+            return False
+    
+    # Do we have filters now?
+    if filters == None
+        logger.error("filterfile.filterFileWithConfig() = Invalid or no filters supplied.")
+        return False
+    
+    # Filter the file.
+    return filterFile(filters, pathIn, pathOut, scratchDir)
+
+
+def filterResourceFile(defaultConfig, resourceOptions, fileName):
+    # TODO Do we need this? Probably need to start implementing pipeline to see how it would be used.
+    pass 
+
+
+def runFilter(defaultConfig, filterProfile, outDir, fileNames):
+    """ TODO """
+    # Assume Failure.
+    fileToFilter = None
+    
+    # We expect to process a list of file names.
+    if not isinstance(fileNames, list):
+        fileNames = [fileNames] # Force list.
+        
+    for fileName in fileNames:
+        if not resourceFileName is None and not moduleFileName == "":
             # Use passed Module File name.
-            logger.info("Module File: " + moduleFileName)
+            logger.info("filterfile.runFilter() - Filtering File: " + moduleFileName)
             try:
                 moduleFile = open(moduleFileName)
             except:
-                print("Error reading Module File:", sys.exc_info()[1])
+                logger.exception("filterfile.runFilter() - Error reading Module File:")
         else:
             # Use stdin if no file name.
             # TODO: Fix here and elsewhere - this won't be reached because we are 
             #       iterating a possibly empty list.
-            logger.info("Reading module data from STDIN.")
+            logger.info("filterfile.runFilter() - Reading module data from STDIN.")
             moduleFile = sys.stdin
 
         if not moduleFile is None:    
