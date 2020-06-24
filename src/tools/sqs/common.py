@@ -6,6 +6,7 @@ Shared code used by all SQS tools and APIs.
 from enum import Enum
 import os 
 import shutil
+import urllib.request
 from sqslogger import logger
 from filters.shellexec import filterFileExtensions as shellexec_filter_ext, filter as shellexec_filter, __doc__ as shellexec_doc
 from filters.cleanbabylon import filterFileExtensions as cleanbab_filter_ext, filter as cleanbab_filter, __doc__ as cleanbab_doc
@@ -46,7 +47,7 @@ class ModuleConfiguration(object):
         # use Python dir functions to generate full path. 
         
         # Override with values from passed world configuration, if any.
-        if not defaultConfigData is None and isinstance(defaultConfigData, dict):
+        if isinstance(defaultConfigData, dict):
             if "pretty-print" in defaultConfigData:
                 self.pp = defaultConfigData["pretty-print"]
             if "pretty-offset" in defaultConfigData:
@@ -68,7 +69,7 @@ class ModuleConfiguration(object):
                 self.filterProfiles.update(defaultConfigData["filter-profiles"])    
         
         # Override with values from passed module configuration, if any.
-        if not moduleConfigData is None and isinstance(moduleConfigData, dict):
+        if isinstance(moduleConfigData, dict):
             if "pretty-print" in moduleConfigData:
                 self.pp = moduleConfigData["pretty-print"]
             if "pretty-offset" in moduleConfigData:
@@ -87,7 +88,45 @@ class ModuleConfiguration(object):
             if "mod-dir" in moduleConfigData:
                 self.modDir = moduleConfigData["mod-dir"]            
             if "filter-profiles" in moduleConfigData:
-                self.filterProfiles.update(moduleConfigData["filter-profiles"])    
+                self.filterProfiles.update(moduleConfigData["filter-profiles"])   
+    
+    def getResourcePath(self, resourceFlavor):
+        """Returns a resource path based on the resource flavor or None."""
+        if resourceFlavor == ResourceFlavor.TEXTURE and len(self.texDir) > 0:
+            return self.texDir
+        elif resourceFlavor == ResourceFlavor.MATERIAL and len(self.matDir) > 0:
+            return self.matDir
+        elif resourceFlavor == ResourceFlavor.OBJECT and len(self.objDir) > 0:
+            return self.objDir
+        elif resourceFlavor == ResourceFlavor.MOD and len(self.modDir) > 0:
+            return self.modDir
+        
+        return None
+    
+    def makeResourceFilePath(self, resourceFlavor, resourceFileName):
+        """Returns a file path based on the resource flavor and the passed file name or 
+        None."""
+        resourcePath = self.getResourcePath(resourceFlavor)
+        
+        if resourcePath is not None and resourceFileName is not None and len(resourceFileName) > 0:
+            return os.path.join(resourcePath, resourceFileName)
+        
+        return None
+    
+    def getFilters(self, filters, filterProfile):
+        """If the filters argument is not 'None', the argument is returned. Otherwise 
+        an attempt is made to return named filters for the filter profile argument. If no 
+        valid filters could be located, 'None' is returned."""
+        
+        if filters != None and filterProfile == None:
+            return filters
+        if filterProfile != None:
+            return self.filterProfiles.get(filterProfile)
+        # We've got nothing.
+        return None
+    
+    def getScratchDirManager(self):
+        return ScratchDirManager(os.path.join(self.bldDir, "scratch/"))
 
 
 class ScratchDirManager(object):
@@ -127,6 +166,12 @@ class ScratchDirManager(object):
         # TODO: This is kind of a brute-force method. Might want to revisit it.
         self.create()
     
+    def makeTempFilePath(self, fileName):
+        """Returns a file path using the file name for use by as a temp file 
+        in the scratch directory. Does not create the file. Does not guarantee no
+        collisions if two processes are using the same scratch directory."""
+        return os.path.join(self.path, "temp_" + fileName)
+    
     def getTempFilePath(self, fileExtension):
         """Returns a file path using the file extension for use by as a temp file 
         in the scratch directory. Does not create the file. Does not guarantee no
@@ -138,7 +183,7 @@ class ScratchDirManager(object):
         return os.path.join(self.path, "temp_" + str(self.ctr) + fileExtension)
         
 
-def getFilterFunction(filterName):
+def getFilterModule(filterName):
     """Returns a tuple for the passed filter name containing filter extension 
     function, the filter function, and the filter doc string. Returns 'None' if  
     the filter could not be located and/or loaded.
@@ -151,22 +196,108 @@ def getFilterFunction(filterName):
     elif filterName == "cleanbabylon":
         return (cleanbab_filter_ext, cleanbab_filter, cleanbab_doc)
     
+    return (None, None, None)
+    
+
+def getSourceURL(urlSource): 
+    """Opens and returns a file-like object from the fully qualified url contained 
+    in the url source or None if no url source was specified or the file url not be 
+    opened."""
+    if urlSource != None and len(urlSource) > 0:
+        try:
+            sf = urllib.request.urlopen(urlSource)
+            return sf
+        except:
+            logger.exception("common.getSourceURL() - Could not open URL '{0}'.".format(urlSource))
+
+    # Failed!
+    return None
+    
+    
+def getSourceFile(fileSource):
+    """Opens and returns the file with the path contained in the file source or 
+    None if no file source was specified or the file could not be opened.
+    
+    NOTE: File is opened in 'rb' (read/binary) mode."""
+    if fileSource: # PYTHON TIP: both None and an empty string evaluates to 'False'
+        try:
+            sf = open(fileSource, 'rb')
+            return sf
+        except:
+            logger.exception("common.getSourceFile() - Could not open file '{0}'.".format(fileSource))
+
+    # Failed!
+    return None
+    
+    
+def getDestFile(fileDest):
+    """Opens and returns the file with the path contained in the file destination or 
+    None if no file destination was specified or the file could not be opened.
+    
+    NOTE: File is opened in 'wb' (write/binary) mode."""
+    if fileDest: # PYTHON TIP: both None and an empty string evaluates to 'False'
+        try:
+            sf = open(fileDest, 'wb')
+            return sf
+        except:
+            logger.exception("common.getDestFile() - Could not open file '{0}'.".format(fileDest))
+
+    # Failed!
     return None
     
 
-def resourceOutPath(defaultConfig, resourceType, resourceFileName):
-    logger.error("common.resourceOutPath() - Not implemented.")
-    pass
+def copySourceToDestAndClose(sourceFile, destFile):
+    """Writes the contents of a source file-like object to a destination file-like object and then
+    attempts to close both if they support a close() method. Returns True on success, otherwise 
+    returns False.
+    
+    NOTE: Requires minimal memory because it doesn't read and write all of the source at one time.
+    
+    NOTE: Assumes both files were opened with the same text or binary mode. May still work otherwise."""
+    # Assume failure.
+    result = False
+    
+    try:
+        # Prime the pump
+        chunk = sourceFile.read(4096) # Read 4kb at a time.
+        
+        # Write the data.
+        while chunk: # PYTHON TIP: an empty string or binary object evaluates to 'False'
+            destFile.write(chunk)
+            chunk = sourceFile.read(4096) # Get next 4kb.
+            
+        # We are good!
+        result = True
+    except:
+        logger.exception("common.copySourceToDest() - Copy failed with exception.")
+    finally:
+        # Close the files.
+        try: 
+            sourceFile.close()
+        except:
+            pass
+        try: 
+            destFile.close()
+        except:
+            pass
+            
+    # Done!
+    return result
 
 
-def getRemoteResourceFile(defaultConfig, resourceType, url):
-    logger.error("common.getRemoteResourceFile() - Not implemented.")
-    pass
-
-
-def getResourceFile(defaultConfig, resourceType, options):
-    logger.error("common.getResourceFile() - Not implemented.")
-    pass
-
+def lookAheadIterator(iterable):
+    """For each value in an iterable object, yield the value plus a 
+    boolean indicating if this is the last item in the iterator or not."""
+    # Get an iterator and grab the first value.
+    it = iter(iterable)
+    last = next(it)
+    
+    # Iterate, yielding the value and False.
+    for val in it:
+        yield last, False
+        last = val
+        
+    # Yield the last value and True.
+    yield last, True
 
     

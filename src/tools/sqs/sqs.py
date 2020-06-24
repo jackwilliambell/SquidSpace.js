@@ -77,6 +77,8 @@ if __name__ == '__main__':
     arguments = docopt(__doc__, version=ver)
     
     # TODO: Support command line options for log level and log file.
+    #       For log level maybe just have options for 'silent' and 'verbose'?
+    #       Maybe always make log file verbose? May need to change initSqsLogger().
     logger = initSqsLogger(True, True, None)
     #logger = initSqsLogger(False, False, None)
     

@@ -1,26 +1,26 @@
-"""## cleanbabylon.py – SQS Filter for cleaning .babylon files
+"""## cleanbabylon.py – SQS Filter Module for cleaning .babylon files
 
 Removes unhelpful or unneeded data sections from .babylon files. 
 
-Besides the standard filter() and filterFileExtensions() function there are two API functions:
+Besides the standard filter() and filterFileExtensions() functions there are 
+two API functions:
 
-* cleanData(data) - Cleans a dictionary containing a parsed .babylon file
+* cleanData(data) - Cleans a Python dictionary containing a parsed .babylon file
 
 * processDirectory(pathIn, pathOut, recurse) - Cleans all .babylon files in 
   the directory specified with pathIn, writing the files out to pathOut. If
   pathIn and pathOut are the same it will operate destructively, overwriting
   the files.
 
-Options: None
+Options: None.
 
-Data: None
+Data: None.
 
 File Extensions:
 
 * in – .babylon
 
-* out – .babylon
-"""
+* out – .babylon"""
 
 
 copyright = """SquidSpace.js, the associated tooling, and the documentation are copyright 

@@ -11,6 +11,10 @@ TODO: Support binary strings and expression strings.
 
 TODO: Support events and mods.
 
+TODO: Support filters
+
+TODO: More detail and examples
+
 For more information on Module Files and SquidSpace.js, please refer to the documentation 
 located in the project repo at https://github.com/jackwilliambell/SquidSpace.js"""
 
@@ -399,7 +403,7 @@ def processModuleString(defaultConfig, moduleDataString):
 
 
 def processModuleFile(defaultConfig, moduleFile):
-    """Loads JSON module data from a file and processes it."""
+    """Loads JSON module data from a file-like object and processes it."""
         
     # Assume failure.
     moduleData = None
@@ -432,8 +436,12 @@ def runGenerate(defaultConfig, moduleFileNames):
             except:
                 logger.exception("generate.runGenerate() - Error reading Module File.")
         else:
+            # TODO: Fix here and elsewhere - this won't be reached because we are 
+            #       iterating a possibly empty list.
+            # TODO: Copy STDIN to scratch directory before starting?
             # Use stdin if no file name.
-            logger.debug("generate.runGenerate() - Reading module data from STDIN.")
+            #logger.info("generate.runGenerate() - Reading module data from STDIN.")
+            logger.error("generate.runGenerate() - Currently STDIN not supported.")
             moduleFile = sys.stdin
 
         if not moduleFile is None:    

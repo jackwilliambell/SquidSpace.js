@@ -10,7 +10,7 @@ sys.path.append(  path.abspath("tools/sqs/") )
 
 import unittest
 from filecmp import cmp
-from common import ScratchDirManager, getFilterFunction
+from common import ScratchDirManager, getFilterModule
 
 copyFilterOptions = {
     "command-template": "cp {pathIn} {pathOut}"
@@ -20,7 +20,7 @@ class TestFilterShellExec(unittest.TestCase):
 
     def test_copyfilter(self):
         # Get filter function
-        filterMod = getFilterFunction("shellexec")
+        filterMod = getFilterModule("shellexec")
         
         self.assertIsNotNone(filterMod)
         self.assertIsNotNone(filterMod[0])
@@ -30,7 +30,7 @@ class TestFilterShellExec(unittest.TestCase):
         filterFunc = filterMod[1]
         
         # Create scratch dir and add file.
-        sd = ScratchDirManager("sqs_test/scratch")
+        sd = ScratchDirManager("tools/sqs_test/scratch")
         fp1 = sd.getTempFilePath(".txt")
         fp2 = sd.getTempFilePath(".txt")
         file = open(fp1, "w") 
@@ -38,7 +38,7 @@ class TestFilterShellExec(unittest.TestCase):
         file.close()
         
         # Execute the filter.
-        self.assertTrue(filterFunc(fp1, fp2, copyFilterOptions))
+        self.assertTrue(filterFunc(fp1, fp2, copyFilterOptions, None))
         
         # Double check the files are the same.
         self.assertTrue(cmp(fp1, fp2))
@@ -48,7 +48,7 @@ class TestFilterShellExec(unittest.TestCase):
 
     def test_copyfilterNoFile(self):
         # Get filter function
-        filterMod = getFilterFunction("shellexec")
+        filterMod = getFilterModule("shellexec")
         
         self.assertIsNotNone(filterMod)
         self.assertIsNotNone(filterMod[0])
@@ -58,7 +58,8 @@ class TestFilterShellExec(unittest.TestCase):
         filterFunc = filterMod[1]
         
         # Apply filter to non-existent files.
-        self.assertFalse(filterFunc("sqs_test/scratch/test.md", "sqs_test/scratch/test1.md", copyFilterOptions))
+        self.assertFalse(filterFunc("tools/sqs_test/scratch/test.md", 
+                                    "tools/sqs_test/scratch/test1.md", copyFilterOptions, None))
 
     # TODO: More tests. Test 'command-arguments' option.
 

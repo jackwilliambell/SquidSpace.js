@@ -1,6 +1,6 @@
-"""## shellexec.py – SQS Filter that executes a shell command
+"""## shellexec.py – SQS Filter Module that executes a shell command
 
-Passes a file to a shell command for filtering. The options argument must contain a value
+Passes a file to a shell command for filtering. The filter options must contain a value
 named 'command-template' consisting of a template string with the command to execute. 
 The options may also contain a value named 'command-arguments' consisting of a JSON object
 with named argument values to apply to the template.
@@ -10,14 +10,14 @@ template values: '{pathIn}' and '{pathOut}', which are replaced by the pathIn an
 pathOut parameters. If 'command-arguments' is also supplied, any names from that value
 may also be used as template values.
 
-The expectation of any command used as a filter is as follows: the command will
-read in pathIn, make changes to it, and write the result out to pathOut. Commands which 
+The expectation of any command used as a filter is as follows: the shell command will
+read in pathIn, make changes to it, and write the result out to pathOut. Shell commands which 
 do not support this paradigm are not usable as filters.
 
 There is no direct support for mapping the pathIn and pathOut parameters to STDIN 
 and STDOUT for commands supporting that usage. However, it is possible to map them in the
-template string using redirection. It is also possible to support multiple commands using
-pipes.
+template string using redirection. It is also possible to support multiple commands in a 
+single command template using pipes.
 
 No attempt is made to suppress STDOUT and STDERR output from the command, so command output
 will be written to the terminal during execution unless redirected in the template string.
@@ -64,8 +64,8 @@ def filterFileExtensions(options, data):
     
 
 def filter(pathIn, pathOut, options, data):
-    logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(
-            pathIn=pathIn, pathOut=pathOut, **options))
+    logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: %{options}s".format(
+            pathIn=pathIn, pathOut=pathOut, options=options))
     
     # TODO: Determine if we want to verify the path in/out file extensions based on the result 
     #       from filterFileExtensions().
