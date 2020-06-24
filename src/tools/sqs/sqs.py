@@ -49,7 +49,6 @@ Options:
   --version       Show version
   --config <cfg>  Module file to use for default configuration
   --dir <path>    Working directory to use instead of current directory
-  --profile <prf> Name of a filter profile to use instead of default for file type
 
 """
 
@@ -101,7 +100,7 @@ if __name__ == '__main__':
         try:
             configFile = open(configFileName)
             defaultConfig = json.load(configFile)["config"]
-            logger.debug("SQS default config: {defaultConfig}".format(defaultConfig))
+            logger.debug("SQS default config: {0}".format(defaultConfig))
         except json.JSONDecodeError:
             logger.exception("Failed to load Configuration Module File:", sys.exc_info()[1])
             sys.exit(1)
@@ -118,13 +117,10 @@ if __name__ == '__main__':
     elif arguments['package']:
         logger.warning("Command 'package' not yet implemented.")
     elif arguments['filter']:
-        logger.warning("Command 'filter' not yet implemented.")
-        # TODO: Fix.
-        # runFilter(defaultConfig, arguments['<resource_type>'], arguments['<file>'], arguments['<prf>'])
+        runFilter(defaultConfig, arguments['<resource_type>'], arguments['<filter_profile>'],
+                  arguments['<output_directory>'], arguments['<file>'])
     elif arguments['pipeline']:
-        logger.warning("Command 'pipeline' not yet implemented.")
-        # TODO: Fix.
-        # runPipeline(defaultConfig, arguments['<file>'])
+        runPipeline(defaultConfig, arguments['<file>'])
     elif arguments['scaffold']:
         logger.warning("Command 'scaffold' not yet implemented.")
     elif arguments['serve']:

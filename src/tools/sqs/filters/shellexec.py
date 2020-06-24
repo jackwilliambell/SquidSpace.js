@@ -64,8 +64,8 @@ def filterFileExtensions(options, data):
     
 
 def filter(pathIn, pathOut, options, data):
-    logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: %{options}s".format(
-            pathIn=pathIn, pathOut=pathOut, options=options))
+    #logger.debug("shellexec.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: %{options}.".format(
+    #        pathIn=pathIn, pathOut=pathOut, options=options))
     
     # TODO: Determine if we want to verify the path in/out file extensions based on the result 
     #       from filterFileExtensions().

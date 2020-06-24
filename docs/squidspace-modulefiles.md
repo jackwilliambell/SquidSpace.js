@@ -308,6 +308,7 @@ All resource configuration subsections provide the following standard resource c
 	- "filter-profile" – [optional; string, do not use if "filters" is supplied] – Specifies a filter profile name from the global options "filter-profiles" to apply to the resource when it is being packed
 
 * "dir" – [optional; string; use only if "file-name" is also specified] – Directory containing the file resource; overrides the global "dir" value for the resource section; when doing cacheing also specifies the directory the file is cached in
+	- TODO: Not currently implemented.
 
 * "file-name" – [required if "pack" is "insert" optional if "pack" is "link", string; do not use if "url" is specified, do not use if "pack" is "none"] – Specifies the file resource in the related resource directory; when doing cacheing also specifies the file name of the cached file
 

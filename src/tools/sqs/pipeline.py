@@ -19,35 +19,37 @@ from urllib.parse import urlparse
 import json
 
 from sqslogger import logger
-from common import ResourceFlavor, ModuleConfiguration, ScratchDirManager, getSourceURL, getSourceFile
+from common import ResourceFlavor, ModuleConfiguration, ScratchDirManager, getSourceURL, getSourceFile, getDestFile, copySourceToDestAndClose
 from filterfile import filterFile
 
     
 def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     """Processes the pipeline for one resource file element. TODO: More docs."""
+    logger.debug("pipeline.processPipelineForResource() - Processing pipeline for resource: " + elem["resource-name"])
+    #logger.debug("pipeline.processPipelineForResource() - Processing pipeline for {0} resource: %{1}s".format( resourceFlavor, elem))
     
     # Get the element config.
     if not "config" in elem:
         # No need to process!
+        logger.debug("pipeline.processPipelineForResource() - No 'config'; process abort with 'True'.")
         return True
-    config elem["config"]
+    config = elem["config"]
     
     # Get the cache options from the config.
     if not "cache-options" in config:
         # No need to process!
+        logger.debug("pipeline.processPipelineForResource() - No 'cache-options' in 'config'; process abort with 'True'.")
         return True
     cacheOptions = config["cache-options"]
     
     # Are there any cache options to process?
-    if bool(cacheOptions): # PYTHON TIP: Empty dictionaries evaluate to 'False'. 
+    if not bool(cacheOptions): # PYTHON TIP: Empty dictionaries evaluate to 'False'. 
         # No need to process!
+        logger.debug("pipeline.processPipelineForResource() - Empty 'cache-options' in 'config'; process abort with 'True'.")
         return True
     
-    #logger.debug("pipeline.processPipelineForResource() - Processing resource data %{0}s.".format(elem))
-    logger.debug("pipeline.processPipelineForResource() - Processing pipeline for: " + elem["resource-name"])
-        
     # Try to get the destination file path.
-    destPath = modConfig.makeResourceFilePath(resourceFlavor, cacheOptions.get("file-name"))
+    destPath = modConfig.makeResourceFilePath(resourceFlavor, config.get("file-name"))
     if not destPath:
         logger.error("pipeline.processPipelineForResource() - Could not determine output file path. Invalid or unspecified file name or configuration.")
         return False
@@ -77,13 +79,13 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     
     # Clear the scratch dir.
     # TODO: Determine if we really want to do this here.
-    ScratchDirManager.clear()
+    scratchDirMgr.clear()
     
     # Copy the source to the scratch dir using the original file name and extension.
     sourcePath = scratchDirMgr.makeTempFilePath(sourceFileName);
     scratchDest = getDestFile(sourcePath)
     if scratchDest:
-        if not copySourceToDestAndClose(sourceFile):
+        if not copySourceToDestAndClose(sourceFile, scratchDest):
             logger.error("pipeline.processPipelineForResource() - Unable to copy source file to scratch directory.")
             return False
     else:
@@ -92,19 +94,19 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     
     # Filter the resource file.
     return filterFile(sourcePath, destPath, scratchDirMgr,
-            modConfig.getFilters(cacheOptions.get("filters"), cacheOptions.get("filter-profile"))
+            modConfig.getFilters(cacheOptions.get("filters"), cacheOptions.get("filter-profile")))
 
 
 def processModuleData(defaultConfig, moduleData):
     """Processes the Module Data to manage an asset pipeline."""
     
     #logger.debug("pipeline.processModuleData() - Processing module data %{0}s.".format(moduleData))
-    logger.debug("pipeline.processModuleData() - Processing pipeline for module: " + module["module-name"])
+    logger.debug("pipeline.processModuleData() - Processing pipeline for module: " + moduleData["module-name"])
     
     # Get module configuration.
     moduleConfig = {} # Default config is empty dict.
-    if "config" in module:
-        moduleConfig = module["config"]
+    if "config" in moduleData:
+        moduleConfig = moduleData["config"]
         
     # Create the module processing configuration.
     modConfig = ModuleConfiguration(defaultConfig, moduleConfig)
@@ -113,12 +115,13 @@ def processModuleData(defaultConfig, moduleData):
     scratchDirMgr = modConfig.getScratchDirManager()
     
     # Process resouces.
-    if "resources" in module:
-        resources = module["resources"]
-        
-        # Process texture resouces.
+    if "resources" in moduleData:
+        resources = moduleData["resources"]
+
         # TODO: Determine if we should check processPipelineForResource() return value and stop all 
         #       processing on failure. Currently will continue processing with next resource.
+        
+        # Process texture resouces.
         if "textures" in resources:
             for texture in resources["textures"]:
                 processPipelineForResource(ResourceFlavor.TEXTURE, texture, scratchDirMgr, modConfig)

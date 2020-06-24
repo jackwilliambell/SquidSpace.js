@@ -64,7 +64,7 @@ def filterFile(sourcePath, destPath, scratchDirMgr, filters):
     
     for fd, isLastFD in lookAheadIterator(filters):
         # Get the named filter module.
-        logger.debug("filterfile.filterFile() - Lookahead: " + str(isLastFD) + " / " + str(fd))
+        # logger.debug("filterfile.filterFile() - Lookahead: " + str(isLastFD) + " / " + str(fd))
         filterExt, filterFunc, filterDoc = getFilterModule(fd.get("filter"))
         if not filterExt or not filterFunc:
             logger.error("filterfile.filterFile() - Could not load filter module for '{0}'.".format(fd.get("filter")))

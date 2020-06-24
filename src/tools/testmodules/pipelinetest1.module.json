@@ -2,7 +2,9 @@
 	"doc": "Example Asset Pipeline module. The 'module-name' needs to be unique among all module files.",
 	"module-name": "pipelineEx",
 	"config": {
-		"doc": "No 'config', use defaults from world.module.json. (You can leave this 'config' section out.)"
+		"doc": "Overriding selected directories for testing purposes. Rest of config defaults to world.module.json.",
+		"build-dir": "tools/testmodules/build/",
+		"texture-dir": "tools/testmodules/textures/"
 	},
 	"resources": {
 		"textures": [
@@ -13,7 +15,7 @@
 					"cache-options": {
 						"doc": "All we need to specify is the URL source and the filter profile; no advanced config.",
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-053-scaled.jpg",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"doc": "Note the file name is a .png. The file will be converted from .jpg by the filters.",
 					"file-name": "ai-weiwei-1.png"
@@ -30,7 +32,7 @@
 					"cache-options": {
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-059-scaled.jpg",
 						"doc": "NOTE: The filter profile 'ArtJpg' is defined in the world.module.json file.",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"doc": "The file name is the name used in the cache and may be different than the source name.",
 					"file-name": "ai-weiwei-2.png"
@@ -41,7 +43,7 @@
 				"config": {
 					"cache-options": {
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-062-scaled.jpg",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"file-name": "ai-weiwei-3.png"
 				}
@@ -52,7 +54,7 @@
 				"config": {
 					"cache-options": {
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IMG_0215-scaled.jpg",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"file-name": "kathryn-duval-1.png"
 				}
@@ -62,7 +64,7 @@
 				"config": {
 					"cache-options": {
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IMG_0216-2-scaled.jpg",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"file-name": "kathryn-duval-2.png"
 				}
@@ -72,7 +74,7 @@
 				"config": {
 					"cache-options": {
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-005-scaled.jpg",
-						"filter-profile": "ArtJpg",
+						"filter-profile": "ArtJpg"
 					},
 					"file-name": "kathryn-duval-3.png"
 				}

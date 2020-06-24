@@ -22,23 +22,23 @@ def makeLogger(lName, consoleLevel, fileLevel, logFilePath):
     log levels. If a log file path is not provided only a console formatter is 
     used, otherwise both a console and a file logger formatter are created."""
     # Create logger.
-    lgr = logging.getLogger(lName)
-    #lgr.setLevel(logging.DEBUG)
+    logr = logging.getLogger(lName)
+    logr.setLevel(consoleLevel)
     
     if logFilePath != None and len(logFilePath) > 0:
         # Create file handler which logs everything.
         fh = logging.FileHandler(logFilePath)
         fh.setLevel(fileLevel)
         fh.setFormatter(logging.Formatter('%(asctime)s %(name)s [%(levelname)s] %(message)s'))
-        lgr.addHandler(fh)
+        logr.addHandler(fh)
     
     # Create console handler.
     ch = logging.StreamHandler()
     ch.setLevel(consoleLevel)
     ch.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
-    lgr.addHandler(ch)
+    logr.addHandler(ch)
     
-    return lgr
+    return logr
     
     
 def initSqsLogger(consoleVerbose, fileVerbose, logFilePath):
