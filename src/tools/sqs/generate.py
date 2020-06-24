@@ -296,24 +296,24 @@ def processModuleData(defaultConfig, moduleData):
     """Processes the Module Data to generate a module file."""
     
     #logger.debug("generate.processModuleData() - Processing module data %{0}s.".format(moduleData))
-    logger.debug("generate.processModuleData() - Writing module: " + module["module-name"])
+    logger.debug("generate.processModuleData() - Writing module: " + moduleData["module-name"])
                 
     # TODO: Improve error handling. Need to decide if we wrap everything in a try-catch or
     # do it line-by-line.     
     
     # Get module configuration.
     moduleConfig = {} # Default config is empty dict.
-    if "config" in module:
-        moduleConfig = module["config"]
+    if "config" in moduleData:
+        moduleConfig = moduleData["config"]
         
     # Create the module processing configuration.
     modConfig = ModuleConfiguration(defaultConfig, moduleConfig)
     
     # Open module output file.
-    mf = open(modConfig.genDir + module["module-name"].lower() + ".js", "w")
+    mf = open(modConfig.genDir + moduleData["module-name"].lower() + ".js", "w")
     
     # Write module start.
-    mf.write("var " + module["module-name"] + " = (function(){")
+    mf.write("var " + moduleData["module-name"] + " = (function(){")
     if modConfig.pp: mf.write("\n")
         
     # Write module publics.
@@ -323,8 +323,8 @@ def processModuleData(defaultConfig, moduleData):
     baseOffset = modConfig.offset + modConfig.offset
     
     # Process resouces.
-    if "resources" in module:
-        resources = module["resources"]
+    if "resources" in moduleData:
+        resources = moduleData["resources"]
         
         # Process texture resouces.
         if "textures" in resources:
@@ -365,10 +365,10 @@ def processModuleData(defaultConfig, moduleData):
             mf.write("},")
     
     # Process layouts.
-    if "layouts" in module:
+    if "layouts" in moduleData:
         if modConfig.pp: mf.write("\n" + baseOffset)
         mf.write("layouts: {")
-        for layout in module["layouts"]:
+        for layout in moduleData["layouts"]:
             if modConfig.pp: mf.write("\n" + baseOffset +  modConfig.offset)
             insertLayoutData(layout, mf, modConfig, baseOffset + modConfig.offset)
         if modConfig.pp: mf.write("\n" + baseOffset)
