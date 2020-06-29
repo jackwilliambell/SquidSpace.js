@@ -75,13 +75,14 @@ var SQUIDSPACE = function() {
 	var prepareHook = function(scene){SQUIDSPACE.logInfo("prepareHook()");};
 	var buildHook = function(scene){SQUIDSPACE.logInfo("buildHook()");};
 	var textureLoaderHooks = {
-		"default": function(texName, options, data, scene) {
-			//return: object instance or undefined if object could not be loaded
+		"TextureData": function(texName, options, data, scene) {
+			return SQUIDSPACE.loadTexture(texName, options, data, scene, null, null, false);
 		}
 	};
+	textureLoaderHooks["default"] = textureLoaderHooks["TextureData"]
 	var materialLoaderHooks = {
 		"default": function(matName, options, data, scene) {
-			//return: object instance or undefined if object could not be loaded
+			//return: material instance or undefined if object could not be loaded
 		}
 	};
 	var objectLoaderHooks = {
@@ -104,8 +105,6 @@ var SQUIDSPACE = function() {
 			let pos = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
 			let mn = SQUIDSPACE.getValIfKeyInDict("material", data, "");
 			let targetPos = SQUIDSPACE.getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
-			// TODO: Get material from material list by material name
-			//       with a default if not loaded.
 			return addCamera(pos[0], pos[1], pos[2], 
 							targetPos[0], targetPos[1], targetPos[2], scene);
 		}
@@ -426,6 +425,34 @@ var SQUIDSPACE = function() {
 			return defaultVal;
 		},
 		
+		/** Returns the size of the bounding box for an object as a Vector3. If 
+		    the object is an array of meshes, returns the largest x, y, and z for
+		    all meshes.
+		*/
+		getObjectSize: function(obj) {
+			size = BABYLON.Vector3(0,0,0);
+			
+			if (Array.isArray(obj)) {
+				if (obj.length > 0) {
+					for (o of obj) {
+						osz = SQUIDSPACE.getObjectSize(o);
+						if (osz.x > size.x) size.x = osz.x;
+						if (osz.y > size.y) size.y = osz.y;
+						if (osz.z > size.z) size.z = osz.z;
+					}
+				}
+				else {
+					str = "Empty mesh array.";
+				}
+			}
+			else {
+				size = obj.getBoundingInfo().boundingBox.extendSize;
+			}
+			
+			return size;
+		},
+		
+		
 		/** Returns an array of points in the form [x, y, z], where the points are 
 		    calculated from the passed points using the following rules:
 
@@ -529,8 +556,55 @@ var SQUIDSPACE = function() {
 		//
 		// Texture management functions.
 		//
-		// TODO: More.
-		//
+
+		loadTexture: function(texName, options, data, scene, onSuccessFunc, onFailFunc, doNotAdd) {		
+			let url = "";
+			if (typeof data === "string") {
+				// TODO: Not currently handling data as BASE64 encoded. This is not supported.
+				SQUIDSPACE.logError(`Not currently loading Texture ${texName} data as BASE64 encoded.`);
+				return undefined;
+				//sceneFilename = "data:" + data;
+			}
+			else if ((typeof data === "object") && ("url" in data)) {
+				url = data["url"];
+			}
+			else if ((typeof data === "object") && ("dir" in data) && ("file-name" in data)) {
+				url = data["dir"] + data["file-name"];
+			}
+			else {
+				SQUIDSPACE.logWarn(`Invalid data values for ${texName}. Data ${data}`);
+				return undefined;
+			}
+			
+			/* TODO: The callback functions don't seem to work.
+			let tx = new BABYLON.Texture(url, scene, false, false, null, 
+					function(newTexture) {
+						// Save the texture for later?
+						if (!doNotAdd) SQUIDSPACE.addTextureInstance(texName, newTexture);
+						
+						// Is there a success function?
+						if (typeof onSuccessFunc == "function") onSuccessFunc(newTexture);
+					},
+					function(scene, message, exception) {
+						SQUIDSPACE.logError("== '" + objName + 
+							"' texture import failed. ==\n  Message: " + 
+							message.substring(0, 64) + " ... " +  message.substring(message.length - 64) +
+							"\n  Exception: " + exception);
+							
+							// Is there a fail function?
+							if (typeof onFailFunc == "function") onFailFunc(scene, message, exception);
+					});
+			*/
+			// HACK: doing this because callback doesn't work.
+			let tx = new BABYLON.Texture(url, scene);
+			if (tx) {
+				// Save the texture for later?
+				if (!doNotAdd) SQUIDSPACE.addTextureInstance(texName, tx);
+				
+				// Is there a success function?
+				if (typeof onSuccessFunc == "function") onSuccessFunc(tx);
+			}
+		},
 		
 		addTextureInstance: function(texName, texture) {		
 			// TODO: Check if texName already exists. Decide how to handle. (Error?)
@@ -644,7 +718,7 @@ var SQUIDSPACE = function() {
 							"\n  Exception: " + exception);
 							
 							// Is there a fail function?
-							if (typeof onSuccessFunc == "function") onFailFunc(scene, message, exception);
+							if (typeof onFailFunc == "function") onFailFunc(scene, message, exception);
 					}, 
 					loaderPluginExtension); 
 			
@@ -691,7 +765,7 @@ var SQUIDSPACE = function() {
 			// Keep a local reference to the object.
 			objects[objName] = meshes;
 		},
-		
+				
 		/** Returns the meshes for the passed object name, assuming the object was 
 			specified in the pack file, loaded with the loadObject(), cloned with cloneObject,
 			or added with the addObject() function. If the object is available it returns 
@@ -830,7 +904,11 @@ var SQUIDSPACE = function() {
 					m.position = SQUIDSPACE.makeLayoutVector(
 										instance[1], 0.01, instance[2], m.scaling.x, m.scaling.y);
 					if (placements[3] != 0) {
-						m.rotate(BABYLON.Axis.Y, instance[3]);
+						// NOTE: rotate() appears to permanently change mesh rotation, so the
+						//       rotation property shows no rotation afterwards.
+						//m.rotate(BABYLON.Axis.Y, instance[3]);
+						// TODO: Support other than 'y' axis rotation.
+						m.rotation = new BABYLON.Vector3(0, instance[3], 0);
 						m.position.z -= (pnlwidth / 2);
 					}
 					

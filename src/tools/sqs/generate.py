@@ -183,7 +183,7 @@ def insertResourceData(resourceFlavor, elem, outFile, modConfig, baseOffset):
     
     # Write the prefix
     if modConfig.pp: outFile.write("\n" + baseOffset)
-    outFile.write(name + ": {") 
+    outFile.write('"' + name + '"' + ": {") 
 
     # Write options, if present.
     if options != None:

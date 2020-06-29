@@ -80,7 +80,6 @@ Result:
 	  --version       Show version
 	  --config <cfg>  Module file to use for default configuration
 	  --dir <path>    Working directory to use instead of current directory
-	  --profile <prf> Name of a filter profile to use instead of default for file type
 
 TODO: Implement commands to list filters and get filter doc strings.
 
