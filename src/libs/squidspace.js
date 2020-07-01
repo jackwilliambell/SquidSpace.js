@@ -329,7 +329,7 @@ var SQUIDSPACE = function() {
 		z = z - (d / 2);
 
 		// Make the floor.
-		let floor = BABYLON.Mesh.CreateGround('floor', w, d, 2, scene);
+		let floor = BABYLON.Mesh.CreateGround('_floor_', w, d, 2, scene);
 		floor.position = new BABYLON.Vector3(x, y, z);
 	    floor.material = material;
 	    //floor.receiveShadows = true; // This seems to increase the CPU requirements by quite a bit.
@@ -1163,6 +1163,12 @@ var SQUIDSPACE = function() {
 			} catch(e) {
 				SQUIDSPACE.logError(`buildWorld(): Build Hook Function failed with error ${e}.`)
 			}
+		
+			// NOTE: We want to turn on collisions using worker threads instead of main thread. However,
+			//       it isn't clear if we still need the code below because BJS may now do it automatically. 
+			//       Also, there may be issues with some browsers that don't properly support worker threads.
+			// MORE: https://blog.raananweber.com/2015/06/06/collisions-using-workers-for-babylonjs-part-2/
+			scene.workerCollisions = true; 	
 						
 			// Turn on optimizaton.
 			// TODO: Consider if we want to refactor this into SquidCommon as a hook. (New hook?)

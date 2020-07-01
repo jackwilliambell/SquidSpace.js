@@ -83,68 +83,6 @@
 		"doc": "This example specifies only textures resources. (You can leave the 'materials' and 'objects' sections out.)",
 		"materials": [],
 		"objects": []
-	},
-	"layouts": [
-		{
-			"doc": "Object layouts for the art show area. Note that the art show is previously defined in the furniture.model.json file.",
-			"layout-name": "artshow",
-			"options": {
-				"doc": "No options, use defaults from furniture.model.json. (You can leave this options section out.)"
-			},
-			"data": [
-				{
-					"doc": "The panel 'artpnl-1-ns-1-1' is from the layouts in the furniture.model.json file.",
-					"object": "artpnl-1-ns-1-1",
-					"data": [
-						{
-							"doc": "The place-name is used as the base name for placed objects.",
-							"place-name": "ai-weiwei",
-							"options": {
-								"doc": "The 'ArtPlacer' figures out the best way to arrange the pictures.",
-								"placer": "ArtPlacer",
-								"moreInfoData": {
-									"title": "Ai Weiwei",
-									"link-text": "Ai Weiwei's Page",
-									"link": "https://squid.fanac.com/art-show/ai-weiwei/",
-									"text": "Ai Weiwei is a Chinese contemporary artist, active in sculpture, installation, architecture, curating, photography, film, and social, political and cultural. These photos are from an exhibit held of his work on Alcatraz island in the former prison buildings in 2015."
-								}
-							},
-							"data": {
-								"doc": "The textures are specified in the 'resources' section.",
-								"textures": [
-									"Ai-Weiwei-1",
-									"Ai-Weiwei-2",
-									"Ai-Weiwei-3"
-								],
-								"place-on": "front"
-							}
-						},
-						{
-							"doc": "The place-name will be used for 3 placed objects: kathryn-duval-1 to kathryn-duval-3.",
-							"place-name": "kathryn-duval",
-							"options": {
-								"placer": "ArtPlacer",
-								"moreInfoData": {
-									"title": "Kathryn Duval",
-									"link-text": "Kathryn Duval's Page",
-									"link": "https://squid.fanac.com/kathryn-duval/",
-									"text": "Kathryn is located in Hilo Hawaii. She’s interested in alternate realities of nature."
-								}
-							},
-							"data": {
-								"textures": [
-									"kathryn-duval-1",
-									"kathryn-duval-2",
-									"kathryn-duval-3"
-								],
-								"doc": "The place-on value lets you specify 'front' or 'back' of the panel.",
-								"place-on": "back"
-							}
-						}
-					]
-				}
-			]
-		}
-	]
+	}
 }
 			
