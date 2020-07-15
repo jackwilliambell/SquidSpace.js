@@ -1,6 +1,6 @@
 {
-	"doc": "Example Asset Pipeline module. The 'module-name' needs to be unique among all module files.",
-	"module-name": "pipelineEx",
+	"doc": "Test Asset Pipeline module. Used only to determine if asset pipeline works.",
+	"module-name": "pipelineTest",
 	"config": {
 		"doc": "Overriding selected directories for testing purposes. Rest of config defaults to world.module.json.",
 		"build-dir": "tools/testmodules/build/",
@@ -13,39 +13,10 @@
 				"doc": "From: https://squid.fanac.com/art-show/ai-weiwei/",
 				"config": {
 					"cache-options": {
-						"doc": "All we need to specify is the URL source and the filter profile; no advanced config.",
 						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-053-scaled.jpg",
 						"filter-profile": "ArtJpg"
 					},
-					"doc": "Note the file name is a .png. The file will be converted from .jpg by the filters.",
 					"file-name": "ai-weiwei-1.png"
-				},
-				"options": {
-					"doc": "Since we are using the default loader and no other options, we don't actually need the options section at all.",
-					"loader": "default"
-				}
-			},
-			{
-				"doc": "The resource-name value should be unique. It is used to specify the resource in the layouts.",
-				"resource-name": "Ai-Weiwei-2",
-				"config": {
-					"cache-options": {
-						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-059-scaled.jpg",
-						"doc": "NOTE: The filter profile 'ArtJpg' is defined in the world.module.json file.",
-						"filter-profile": "ArtJpg"
-					},
-					"doc": "The file name is the name used in the cache and may be different than the source name.",
-					"file-name": "ai-weiwei-2.png"
-				}
-			},
-			{
-				"resource-name": "Ai-Weiwei-3",
-				"config": {
-					"cache-options": {
-						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-062-scaled.jpg",
-						"filter-profile": "ArtJpg"
-					},
-					"file-name": "ai-weiwei-3.png"
 				}
 			},
 			{
@@ -58,31 +29,8 @@
 					},
 					"file-name": "kathryn-duval-1.png"
 				}
-			},
-			{
-				"resource-name": "kathryn-duval-2",
-				"config": {
-					"cache-options": {
-						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IMG_0216-2-scaled.jpg",
-						"filter-profile": "ArtJpg"
-					},
-					"file-name": "kathryn-duval-2.png"
-				}
-			},
-			{
-				"resource-name": "kathryn-duval-3",
-				"config": {
-					"cache-options": {
-						"url-source": "https://squid.fanac.com/wp-content/uploads/2020/05/IP_0815_-005-scaled.jpg",
-						"filter-profile": "ArtJpg"
-					},
-					"file-name": "kathryn-duval-3.png"
-				}
 			}
-		],
-		"doc": "This example specifies only textures resources. (You can leave the 'materials' and 'objects' sections out.)",
-		"materials": [],
-		"objects": []
+		]
 	}
 }
 			

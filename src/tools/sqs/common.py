@@ -3,14 +3,13 @@
 Shared code used by all SQS tools and APIs.
 """
 
+# TODO: Refactor to pass the logger in as an argument to all functions?
+
 from enum import Enum
 import os 
 import shutil
 import urllib.request
 from sqslogger import logger
-from filters.shellexec import filterFileExtensions as shellexec_filter_ext, filter as shellexec_filter, __doc__ as shellexec_doc
-from filters.cleanbabylon import filterFileExtensions as cleanbab_filter_ext, filter as cleanbab_filter, __doc__ as cleanbab_doc
-
 
 class ResourceFlavor(Enum):
     """Enumeration of supported resource types."""
@@ -26,7 +25,7 @@ class ResourceAction(Enum):
     INSERT = 1
     LINK = 2
     
-    
+        
 class ModuleConfiguration(object):
     """Contains a module configuration."""
     def __init__(self, defaultConfigData, moduleConfigData):
@@ -42,6 +41,7 @@ class ModuleConfiguration(object):
         self.objDir = "assets/objects/"
         self.modDir = "assets/mods/"
         self.filterProfiles = {}
+        self.autoLoad = False;
         
         # TODO: make sure the 'dir' values are proper paths with a trailing slash and/or
         # use Python dir functions to generate full path. 
@@ -67,6 +67,8 @@ class ModuleConfiguration(object):
                 self.modDir = defaultConfigData["mod-dir"]   
             if "filter-profiles" in defaultConfigData:
                 self.filterProfiles.update(defaultConfigData["filter-profiles"])    
+            if "autoload" in defaultConfigData:
+                self.autoLoad = defaultConfigData["autoload"]   
         
         # Override with values from passed module configuration, if any.
         if isinstance(moduleConfigData, dict):
@@ -89,6 +91,8 @@ class ModuleConfiguration(object):
                 self.modDir = moduleConfigData["mod-dir"]            
             if "filter-profiles" in moduleConfigData:
                 self.filterProfiles.update(moduleConfigData["filter-profiles"])   
+            if "autoload" in moduleConfigData:
+                self.autoLoad = moduleConfigData["autoload"]   
     
     def getResourcePath(self, resourceFlavor):
         """Returns a resource path based on the resource flavor or None."""
@@ -166,13 +170,57 @@ class ScratchDirManager(object):
         # TODO: This is kind of a brute-force method. Might want to revisit it.
         self.create()
     
-    def makeTempFilePath(self, fileName):
+    def listFiles(self, subDirName = None):
+        """Returns a list of files paths in the scratch directory. May return an empty 
+        list if the directory could not be listed. You can optionally specify a sub 
+        directory name of the scratch directory to list."""
+        path = self.path
+        if (subDirName): path = os.path.join(path, subDirName)
+        try: 
+            result = [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        except:
+            pass
+        
+        return result;
+    
+    def listSubdirs(self):
+        """Returns a list of subdirectories in the scratch directory. May return an empty 
+        list if the directory could not be listed."""
+        result = []
+        try: 
+            result = [os.path.join(path, f) for f in os.listdir(self.path) if not os.path.isfile(os.path.join(self.path, f))]
+        except:
+            pass
+        
+        return result;
+    
+    def makeSubDir(self, dirName):
+        """Creates a subdirectory using the passed directory name and returns
+        the path."""
+        path = os.path.join(self.path, dirName)
+        os.makedirs(path)
+        return path
+    
+    def makeSubScratchDirManager(self, dirName):
+        """Returns a new ScratchDirManager instance using the passed directory
+        name as a subdirectory of the current ScratchDirManager instance."""
+        return ScratchDirManager(os.path.join(self.path, dirName))
+    
+    def makeFilePath(self, fileName):
         """Returns a file path using the file name for use by as a temp file 
         in the scratch directory. Does not create the file. Does not guarantee no
         collisions if two processes are using the same scratch directory."""
+        return os.path.join(self.path, fileName)
+    
+    def makeTempFilePath(self, fileName):
+        """Returns a file path using the file name for use by as a temp file 
+        in the scratch directory. Does not create the file. Does not guarantee no
+        collisions if two processes are using the same scratch directory.
+        
+        NOTE: The file name will have 'temp_' prepended."""
         return os.path.join(self.path, "temp_" + fileName)
     
-    def getTempFilePath(self, fileExtension):
+    def makeTempFilePathForExt(self, fileExtension):
         """Returns a file path using the file extension for use by as a temp file 
         in the scratch directory. Does not create the file. Does not guarantee no
         collisions if two processes are using the same scratch directory."""
@@ -182,21 +230,29 @@ class ScratchDirManager(object):
         self.ctr = self.ctr + 1
         return os.path.join(self.path, "temp_" + str(self.ctr) + fileExtension)
         
+    def makeOutputFilesFunc(self):
+        """Returns an 'outputs()' function, such as those used by the filters, which
+        returns a file path for a file name."""
+        def outputFilesFunc(fileName):
+            return self.makeFilePath(fileName)
+        
+        return outputFilesFunc
+ 
+        
+def makeOutputFilesFuncForDir(dirPath):
+    """Returns an 'outputs()' function, such as those used by the filters, which
+    returns a file path for a file name."""
+    def outputFilesFunc(fileName):
+        return os.path.join(dirPath, fileName)
+    
+    return outputFilesFunc
 
-def getFilterModule(filterName):
-    """Returns a tuple for the passed filter name containing filter extension 
-    function, the filter function, and the filter doc string. Returns 'None' if  
-    the filter could not be located and/or loaded.
     
-    TODO: Support dynamic imports from a 'filters' directory."""
-    
-    # Is it a 'built-in' filter?
-    if filterName == "shellexec":
-        return (shellexec_filter_ext, shellexec_filter, shellexec_doc)
-    elif filterName == "cleanbabylon":
-        return (cleanbab_filter_ext, cleanbab_filter, cleanbab_doc)
-    
-    return (None, None, None)
+def forceFileExtension(filePath, exToUse):
+    """Forces the passed file path to have the passed extension."""
+    if not exToUse.startswith("."): exToUse = "." + exToUse
+    root, ex = os.path.splitext(filePath)
+    return root + exToUse
     
 
 def getSourceURL(urlSource): 
@@ -284,6 +340,10 @@ def copySourceToDestAndClose(sourceFile, destFile):
     # Done!
     return result
 
+def copyFileToDir(inFilePath, outDirPath):
+    return copySourceToDestAndClose(getSourceFile(inFilePath), 
+            getDestFile(os.path.join(outDirPath, os.path.basename(inFilePath))))
+
 
 def lookAheadIterator(iterable):
     """For each value in an iterable object, yield the value plus a 
@@ -295,9 +355,8 @@ def lookAheadIterator(iterable):
     # Iterate, yielding the value and False.
     for val in it:
         yield last, False
+        # Make the current value last.
         last = val
         
     # Yield the last value and True.
     yield last, True
-
-    

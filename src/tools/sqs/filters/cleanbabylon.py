@@ -2,21 +2,18 @@
 
 Removes unhelpful or unneeded data sections from .babylon files. 
 
-Besides the standard filter() and filterFileExtensions() functions there are 
-two API functions:
+Besides the standard filterFile() functions there are two API functions:
 
-* cleanData(data) - Cleans a Python dictionary containing a parsed .babylon file
+1. cleanBabylonData(data) - Cleans a Python dictionary containing a parsed .babylon file
 
-* processDirectory(pathIn, pathOut, recurse) - Cleans all .babylon files in 
-  the directory specified with pathIn, writing the files out to pathOut. If
-  pathIn and pathOut are the same it will operate destructively, overwriting
-  the files.
+2. cleanBabylonFile(pathIn, pathOut, options, logger) – Cleans the data of a .babylon 
+  file specified in pathIn and writes it to pathOut
+
+### Filter File function
 
 Options: None.
 
-Data: None.
-
-File Extensions:
+File Extensions supported:
 
 * in – .babylon
 
@@ -31,10 +28,11 @@ assets, are copyright their respective authors."""
 import sys
 import os
 import json
-from sqslogger import logger
-
     
-def cleanData(data):
+    
+def cleanBabylonData(data):
+    """Cleans the data of a parsed .babylon file. Returns True if there was something 
+    to clean, otherwise returns False to indicate the data was not 'dirty'."""
     dirty = False
     
     # Check for other unwanted sections and clean them.
@@ -63,27 +61,15 @@ def cleanData(data):
     
     # Done!
     return dirty
+    
 
-
-def processDirectory(pathIn, pathOut, recurse):
-    logger.debug("cleanbabylon.processDirectory() - Processing pathIn: {pathIn} pathOut: {pathOut} recurse: {recurse}".format(pathIn, pathOut, recurse))
-
-    for item in os.listdir(path):
-        if os.path.isdir(item):
-            if recurse:
-                processDirectory(item, recurse)
-        else:
-            filter(os.path.join(pathIn, item), os.path.join(pathOut, item))
-
-    # DEBUG: Comment out for production.
-    #print("Path processing complete.")
-
-def filterFileExtensions(options, data):
-    return (".babylon", ".babylon")
-
-def filter(pathIn, pathOut, options, data):
-    # NOTE: Currently supports no options.
-    logger.debug("cleanbabylon.filter() - Processing pathIn: {pathIn} pathOut: {pathOut} options: options".format(pathIn, pathOut, options))
+def cleanBabylonFile(pathIn, pathOut, options, logger):
+    """Cleans the data of a .babylon file specified in pathIn and writes it to
+    pathOut. Returns True on success, otherwise returns False.
+    
+    NOTE: Currently supports no options."""
+    
+    logger.debug("cleanbabylon.cleanBabylonFile() - Processing pathIn: {pathIn} pathOut: {pathOut}".format(pathIn, pathOut))
     
     # Assume failure.
     result = False
@@ -98,12 +84,13 @@ def filter(pathIn, pathOut, options, data):
                 close(babFile)
             
             # Try to clean the data.
-            if cleanData(data):
-                logger.debug("Babylon file was cleaned.")
+            if cleanBabylonData(data):
+                logger.debug("cleanbablyon.cleanBabylonFile() - Babylon file was cleaned.")
             else:
-                logger.debug("Babylon file did not require cleaning.")
+                logger.debug("cleanbablyon.cleanBabylonFile() - Babylon file did not require cleaning.")
             try:
-                # Write it back out.
+                # Write it back out. (We do this even if the clean did nothing, because 
+                # output and input may be/should be different files.)
                 # TODO: This writes it packed, do we want a 'pretty print' option?
                 with open(pathOut, 'w') as babFile:
                     json.dump(data, babFile)
@@ -111,8 +98,30 @@ def filter(pathIn, pathOut, options, data):
                 logger.debug("Babylon file written out.")
                 result = True
             except:
-                logger.exception("shellexec.filter() - Command '{command}' failed to write output.".format(command))
+                logger.exception("cleanbablyon.cleanBabylonFile() - Could not write output file '{0}', continuing processing.".format(pathOut))
         except:
-            logger.exception("shellexec.filter() - Command '{command}' failed to parse the .babylon file.".format(command))
+                logger.exception("cleanbablyon.cleanBabylonFile() - Could not read input file '{0}', continuing processing.".format(pathIn))
+    else:
+        logger.error("cleanbablyon.cleanBabylonFile() - Input file '{0}' is not a .babylon file.".format(pathIn))
     
     return result
+    
+
+def filterFiles(inputs, outputs, options, logger):
+    """SQS filter files function that 'cleans' Babylon files.
+    
+    NOTE: Currently supports no options."""
+    
+    logger.debug("cleanbablyon.filterFiles().")
+    
+    # Setup
+    result = 0
+
+    # Process input files.
+    for pathIn in inputs:
+        if cleanBabylonFile(pathIn, outputs(os.path.basename(pathIn)), options, logger):
+            result = result + 1
+            
+    # Done.
+    return result
+    

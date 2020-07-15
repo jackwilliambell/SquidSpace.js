@@ -20,7 +20,7 @@ import json
 
 from sqslogger import logger
 from common import ResourceFlavor, ModuleConfiguration, ScratchDirManager, getSourceURL, getSourceFile, getDestFile, copySourceToDestAndClose
-from filterfile import filterFile
+from filtercommand import processFilterChain
 
     
 def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
@@ -31,21 +31,21 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     # Get the element config.
     if not "config" in elem:
         # No need to process!
-        logger.debug("pipeline.processPipelineForResource() - No 'config'; process abort with 'True'.")
+        logger.warning("pipeline.processPipelineForResource() - No 'config'; process abort with 'True'.")
         return True
     config = elem["config"]
     
     # Get the cache options from the config.
     if not "cache-options" in config:
         # No need to process!
-        logger.debug("pipeline.processPipelineForResource() - No 'cache-options' in 'config'; process abort with 'True'.")
+        logger.warning("pipeline.processPipelineForResource() - No 'cache-options' in 'config'; process abort with 'True'.")
         return True
     cacheOptions = config["cache-options"]
     
     # Are there any cache options to process?
     if not bool(cacheOptions): # PYTHON TIP: Empty dictionaries evaluate to 'False'. 
         # No need to process!
-        logger.debug("pipeline.processPipelineForResource() - Empty 'cache-options' in 'config'; process abort with 'True'.")
+        logger.warning("pipeline.processPipelineForResource() - Empty 'cache-options' in 'config'; process abort with 'True'.")
         return True
     
     # Try to get the destination file path.
@@ -56,17 +56,14 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     
     # Try to get the source file path, source file name, and open it as a file.
     sourcePath = cacheOptions.get("file-source")
-    sourceFileName = None
     sourceFile = None
     if sourcePath:
-        sourceFileName = os.path.basename(sourcePath)
         sourceFile = getSourceFile(sourcePath)
     else:
         # Try to get the source from a URL.
         sourcePath = cacheOptions.get("url-source")
         if sourcePath:
             url = urlparse(sourcePath)
-            sourceFileName = os.path.basename(url.path)
             sourceFile = getSourceURL(sourcePath)
         else:
             logger.error("pipeline.processPipelineForResource() - Invalid or unspecified file or URL source in 'cache-options'.")
@@ -81,8 +78,19 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     # TODO: Determine if we really want to do this here.
     scratchDirMgr.clear()
     
-    # Copy the source to the scratch dir using the original file name and extension.
-    sourcePath = scratchDirMgr.makeTempFilePath(sourceFileName);
+    # Re-create the source path from the destination file name and the input file extension.
+    # Also strip the name portion from the destination path, so we can use it as a pure path.
+    # This way we are starting processing from the name we want to end up with and providing
+    # a directory path for the result.
+    # NOTE: If the filters change the name we will not have the expected result.
+    # TODO: Need to make this more robust, but not sure how to handle filters which
+    #       do odd things.
+    sourceName, sourceExt = os.path.splitext(os.path.basename(sourcePath))
+    destPath, destName = os.path.split(destPath)
+    destName, destExt = os.path.splitext(destName)
+    sourcePath = scratchDirMgr.makeFilePath(destName + sourceExt)
+    
+    # Copy the source to the scratch dir.
     scratchDest = getDestFile(sourcePath)
     if scratchDest:
         if not copySourceToDestAndClose(sourceFile, scratchDest):
@@ -93,7 +101,7 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
         return False
     
     # Filter the resource file.
-    return filterFile(sourcePath, destPath, scratchDirMgr,
+    return processFilterChain([sourcePath], destPath, scratchDirMgr,
             modConfig.getFilters(cacheOptions.get("filters"), cacheOptions.get("filter-profile")))
 
 

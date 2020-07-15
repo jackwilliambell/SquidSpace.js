@@ -1,0 +1,27 @@
+{
+	"build-name": "content-file-build",
+	"doc": "Squid Hall build file that executes the 'contentpipeline' and 'contentprepare' sub build files.",
+	"config": {
+		"doc": "Like module files, uses world.module.json defaults; however you can override module configurations during the generation step as well.",
+		"generate-dir": "libs/modules/content/"
+	},
+	"build-steps": [
+		{
+			"doc": "Executes sub-build files to manage the pipeline and generate the javascript.",
+			"step-name": "run-content-sub-build-files",
+			"command": "build",
+			"config": {
+				"doc": "You can override the file configuration for this step if required.",
+			},
+			"options": {
+			},
+			"data": [
+				"contentpipeline.build.json",
+				"contentprepare.build.json"
+			]
+		}
+	],
+	"doc": "This file may include package steps in the future.",
+	"package-steps": [
+	]
+}

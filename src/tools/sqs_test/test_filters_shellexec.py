@@ -10,9 +10,13 @@ sys.path.append(  path.abspath("tools/sqs/") )
 
 import unittest
 from filecmp import cmp
-from common import ScratchDirManager, getFilterModule
+from common import ScratchDirManager, forceFileExtension, makeOutputFilesFuncForDir
+from sqslogger import logger
+from filterhelpers import getFilterModule
 
 copyFilterOptions = {
+    "in-ext": "txt",
+    "out-ext": "md",
     "command-template": "cp {pathIn} {pathOut}"
 }
 
@@ -25,20 +29,20 @@ class TestFilterShellExec(unittest.TestCase):
         self.assertIsNotNone(filterMod)
         self.assertIsNotNone(filterMod[0])
         self.assertIsNotNone(filterMod[1])
-        self.assertIsNotNone(filterMod[2])
         
-        filterFunc = filterMod[1]
+        filterFunc = filterMod[0]
         
         # Create scratch dir and add file.
-        sd = ScratchDirManager("tools/sqs_test/scratch")
-        fp1 = sd.getTempFilePath(".txt")
-        fp2 = sd.getTempFilePath(".txt")
+        sd = ScratchDirManager("tools/sqs_test/scr/scratch")
+        fp1 = sd.makeTempFilePathForExt(".txt")
+        fp2 = forceFileExtension(fp1, ".md")
+        outputs = sd.makeOutputFilesFunc()
         file = open(fp1, "w") 
         file.write("This is a temporary test text file.") 
         file.close()
         
-        # Execute the filter.
-        self.assertTrue(filterFunc(fp1, fp2, copyFilterOptions, None))
+        # Execute the filter. It should return '1' to indicate one file was processed.
+        self.assertEqual(filterFunc([fp1], outputs, copyFilterOptions, logger), 1)
         
         # Double check the files are the same.
         self.assertTrue(cmp(fp1, fp2))
@@ -53,13 +57,13 @@ class TestFilterShellExec(unittest.TestCase):
         self.assertIsNotNone(filterMod)
         self.assertIsNotNone(filterMod[0])
         self.assertIsNotNone(filterMod[1])
-        self.assertIsNotNone(filterMod[2])
         
-        filterFunc = filterMod[1]
+        filterFunc = filterMod[0]
         
         # Apply filter to non-existent files.
-        self.assertFalse(filterFunc("tools/sqs_test/scratch/test.md", 
-                                    "tools/sqs_test/scratch/test1.md", copyFilterOptions, None))
+        fp1 = "tools/sqs_test/scratch/test.text"
+        outputs = makeOutputFilesFuncForDir("tools/sqs_test/scr/scratch")
+        self.assertEqual(filterFunc([fp1], outputs, copyFilterOptions, logger), 0)
 
     # TODO: More tests. Test 'command-arguments' option.
 

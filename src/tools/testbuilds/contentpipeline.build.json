@@ -1,0 +1,26 @@
+{
+	"build-name": "content-file-pipeline",
+	"doc": "Squid Hall build file that runs the asset pipeline for content files.",
+	"config": {
+		"doc": "We are overriding the 'texture-dir' from the world.module.json file and any module files.",
+		"texture-dir": "textures/content/"
+	},
+	"build-steps": [
+		{
+			"doc": "Runs the asset pipeline for all files who's names end with 'content.module.json'.",
+			"step-name": "run-pipeline",
+			"command": "pipeline",
+			"config": {
+				"doc": "You can override the file configuration for this step if required.",
+			},
+			"options": {
+			},
+			"data": [
+				"*.content.module.json"
+			]
+		}
+	],
+	"doc": "There are no package steps for this file, the 'package-steps' section may be left out.",
+	"package-steps": [
+	]
+}
