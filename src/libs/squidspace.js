@@ -51,11 +51,6 @@ var SQUIDSPACE = function() {
 	// Module data.
 	//
 
-	// TODO: Refactor to remove these. (Put in squidhall.js or SquidCommons?)
-	var pnlwidth = 1;
-	var norot = 0; // Do not rotate.
-	var rot = Math.PI / 2; // Rotate 90 degrees.
-
 	var logLevel = SQS_LOG_ERROR;
 
 	// This is the NW corner of the arena and the origin for layouts. 
@@ -66,6 +61,7 @@ var SQUIDSPACE = function() {
 	var materials = {};
 	var objects = {};
 	var lights = {};
+	var contentModules = [];
 	
 	//
 	// Hooks.
@@ -101,9 +97,7 @@ var SQUIDSPACE = function() {
 		},
 		"UserCamera": function(objName, options, data, scene) {
 			// TODO: Size should be 3 elements.
-			let sz = SQUIDSPACE.getValIfKeyInDict("size", data, [1, 1]);
 			let pos = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
-			let mn = SQUIDSPACE.getValIfKeyInDict("material", data, "");
 			let targetPos = SQUIDSPACE.getValIfKeyInDict("target-position", data, [20, 1.6, 20]);
 			return addCamera(pos[0], pos[1], pos[2], 
 							targetPos[0], targetPos[1], targetPos[2], scene);
@@ -120,15 +114,19 @@ var SQUIDSPACE = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
+			// TODO: 'moreInfoData' is Squid Hall-specific. Use something different.
+			let eventData = SQUIDSPACE.getValIfKeyInDict("moreInfoData", options, undefined);
+			let mat = SQUIDSPACE.getValIfKeyInDict("material", data, undefined);
 			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
 			let rotation = SQUIDSPACE.getValIfKeyInDict("rotation", data, [0, 0, 0]);
+			let scale = SQUIDSPACE.getValIfKeyInDict("scale", data, 1);
 			let plc = [];
 			
 			// TODO: Placements currently do not include 'y' and only rotate on y axis.
 			SQUIDSPACE.addSingleInstanceToPlacements(placeName, plc, position[0], position[2], rotation[1]);
 
 			if (plc.length > 0) {
-				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, mat, eventData, scene, scale);
 				return true;
 			}
 			
@@ -138,6 +136,9 @@ var SQUIDSPACE = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
+			// TODO: 'moreInfoData' is Squid Hall-specific. Use something different.
+			let eventData = SQUIDSPACE.getValIfKeyInDict("moreInfoData", data, undefined);
+			let mat = SQUIDSPACE.getValIfKeyInDict("material", data, undefined);
 			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
 			let rotation = SQUIDSPACE.getValIfKeyInDict("rotation", data, [0, 0, 0]);
 			let count = SQUIDSPACE.getValIfKeyInDict("count", data, 1);
@@ -150,7 +151,7 @@ var SQUIDSPACE = function() {
 				offset, across, rotation[1]);
 			
 			if (plc.length > 0) {
-				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, mat, eventData, scene);
 				return true;
 			}
 			
@@ -160,6 +161,9 @@ var SQUIDSPACE = function() {
 			// TODO: Handle layoutOptions as needed. 
 			
 			// Get values.
+			// TODO: 'moreInfoData' is Squid Hall-specific. Use something different.
+			let eventData = SQUIDSPACE.getValIfKeyInDict("moreInfoData", data, undefined);
+			let mat = SQUIDSPACE.getValIfKeyInDict("material", data, undefined);
 			let position = SQUIDSPACE.getValIfKeyInDict("position", data, [0, 0, 0]);
 			let countWide = SQUIDSPACE.getValIfKeyInDict("countWide", data, 1);
 			let countDeep = SQUIDSPACE.getValIfKeyInDict("countDeep", data, 1);
@@ -172,7 +176,7 @@ var SQUIDSPACE = function() {
 				position[0], position[2], lengthOffset, widthOffset);
 			
 			if (plc.length > 0) {
-				SQUIDSPACE.placeObjectInstances(objectName, plc, undefined, scene);
+				SQUIDSPACE.placeObjectInstances(objectName, plc, mat, eventData, scene);
 				return true;
 			}
 		
@@ -224,7 +228,7 @@ var SQUIDSPACE = function() {
 					// Append the options.
 					// TODO: Consider better ways to do this and if we want to. (Right now
 					//       just wastes memory without a solid use case)
-					result.options = options;
+					//result.options = options;
 					
 					// Save the object for later.
 					SQUIDSPACE.addObjectInstance(key, result);
@@ -339,17 +343,23 @@ var SQUIDSPACE = function() {
 	}
 	
 	var addCamera = function(x, y, z, targetX, targetY, targetZ, scene) {
+		//SQUIDSPACE.logDebug(`addCamera() - Pos: [${x}, ${y}, ${z}] Target: [${targetX}, ${targetY}, ${targetZ}]`);
 
 		// Add a camera to the scene and attach it to the canvas
 		// TODO: Specify camera in world file.
 		// TODO: Support switching to VirtualJoysticksCamera if running on a tablet or phone.
 		// See https://doc.babylonjs.com/babylon101/cameras#virtual-joysticks-camera
-		let camera = new BABYLON.UniversalCamera("usercamera", 
-												SQUIDSPACE.makePointVector(x, y, x), scene);
+		// HACK: The 'y + 0.4' forces the starting position to be correct so the camera 
+		//       does not 'bob up' when you start to move. 
+		// TODO: Calculate height instead of using a constant.
+		let camera = new BABYLON.UniversalCamera("usercamera", SQUIDSPACE.makePointVector(x, y, z), scene);
 		//var camera = new BABYLON.FreeCamera("default camera", new BABYLON.Vector3(0, 5, -10), scene);
 		//var camera = new BABYLON.FlyCamera("default camera", new BABYLON.Vector3(0, 5, -10), scene);
 		camera.setTarget(new SQUIDSPACE.makePointVector(targetX, targetY, targetZ));
 		camera.attachControl(canvas, true);
+
+		//SQUIDSPACE.logDebug(`addCamera() - floorOriginNW: ${floorOriginNW}`);
+		//SQUIDSPACE.logDebug(`addCamera() - Camera Pos: ${camera.position}`);
 
 		//
 		// Enable walking.
@@ -364,8 +374,9 @@ var SQUIDSPACE = function() {
 		//       up close to objects, while still allowing you to navigate around without
 		//       getting stuck between things. However, this does mean you can't get really
 		//       close to anything straight in front of you.
-		camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
-
+		//camera.ellipsoid = new BABYLON.Vector3(0.85, 0.8, 0.85);
+		camera.ellipsoid = new BABYLON.Vector3(1, 0.8, 1);
+		
 		// WASD movement.
 	    camera.keysUp.push(87);    //W
 	    camera.keysDown.push(83)   //D
@@ -408,6 +419,16 @@ var SQUIDSPACE = function() {
 	// TODO: Implement.
 
 	return {
+		//
+		// Hacks.
+		//
+		
+		// Expose addFloor().
+		addFloorExp: function (x, y, z, w, d, material, scene) {
+			return addFloor(x, y, z, w, d, material, scene);
+		},
+		
+		
 		//
 		// Public helper functions.
 		//
@@ -461,7 +482,7 @@ var SQUIDSPACE = function() {
 		
 			TODO: Add origin argument, which if undefined defaults to floor origin.
 		 */
-		makePointXYX: function(x, y, z) {
+		makePointXYZ: function(x, y, z) {
 			// TODO: This function was created because I don't understand how Babylon
 			//       does local vectors and was under time pressure, so couldn't do the
 			//       research. At some point we need to use the BJS code instead, but could
@@ -667,14 +688,15 @@ var SQUIDSPACE = function() {
 		*/
 		loadObject: function(objName, options, data, scene, onSuccessFunc, onFailFunc, doNotAdd) {
 			let obj = undefined;
+			let matName = SQUIDSPACE.getValIfKeyInDict("material", options, undefined);
 			let visible = SQUIDSPACE.getValIfKeyInDict("visible", options, false);
 			let collisionDetect = SQUIDSPACE.getValIfKeyInDict("collision-detection", options, true);
 			// For meshNameFilter, empty string means import *all* meshes in the object.
 			let meshNameFilter = SQUIDSPACE.getValIfKeyInDict("mesh-name-filter", options, ""); 
-			let loaderPluginExtension = SQUIDSPACE.getValIfKeyInDict("loader-plugin", options, false);
+			let loaderPluginExtension = SQUIDSPACE.getValIfKeyInDict("loader-plugin", options, null);
 			
 			let rootUrl = "";
-			let sceneFilename = null;
+			let sceneFilename = "";
 			if (typeof data === "string") {
 				sceneFilename = "data:" + data;
 			}
@@ -683,11 +705,18 @@ var SQUIDSPACE = function() {
 			}
 			else if ((typeof data === "object") && ("dir" in data) && ("file-name" in data)) {
 				rootUrl = data["dir"];
-				sceneFilename = "data:" + data["file-name"];
+				sceneFilename = data["file-name"];
 			}
 			else {
 				SQUIDSPACE.logWarn(`Invalid data values for ${objName}. Data ${data}`);
 				return undefined;
+			}
+			
+			// HACK! This uses one material and applies it to all meshes of the object. 
+			// TODO: Do materials right.
+			material = undefined;
+			if (matName) {
+				material = SQUIDSPACE.getMaterial(matName);
 			}
 			
 			BABYLON.SceneLoader.ImportMesh(meshNameFilter, rootUrl, sceneFilename, scene, 
@@ -696,6 +725,7 @@ var SQUIDSPACE = function() {
 						for (mesh of newMeshes) {
 							mesh.isVisible = visible;
 							mesh.checkCollisions = collisionDetect;
+							if (material) mesh.material = material;
 						}
 						
 						// Save the meshes for later?
@@ -721,7 +751,7 @@ var SQUIDSPACE = function() {
 							if (typeof onFailFunc == "function") onFailFunc(scene, message, exception);
 					}, 
 					loaderPluginExtension); 
-			
+								
 			// Done.
 			return obj;
 		},
@@ -866,17 +896,17 @@ var SQUIDSPACE = function() {
 			// Do width placements.
 			for (let i = 0;i < countWide;i++) {
 				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-top-", placements, 
-													countWide, wx, z, lengthOffset, true, norot);
+													countWide, wx, z, lengthOffset, true, 0);
 				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-bottom-", placements, 
-													countWide, wx, bz, lengthOffset, true, norot);
+													countWide, wx, bz, lengthOffset, true, 0);
 			}
 
 			// Do depth placements.
-			for (let i = 0;i< countDeep;i++) {
+			for (let i = r;i< countDeep;i++) {
 				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-left-", placements, 
-								countDeep, x - lengthOffset, z + lengthOffset, lengthOffset, false, rot);
+								countDeep, x - lengthOffset, z + lengthOffset, lengthOffset, false, Math.PI / 2);
 				SQUIDSPACE.addLinearSeriesToPlacements(seriesName + "-right-", placements, 
-								countDeep, rx, z + lengthOffset, lengthOffset, false, rot);
+								countDeep, rx, z + lengthOffset, lengthOffset, false, Math.PI / 2);
 			}
 		},
 
@@ -887,18 +917,28 @@ var SQUIDSPACE = function() {
 			TODO: Material not currently supported. Consider removing it, since it isn't
 		          clear which mesh would get the material. (All meshes in object?)
 		 */
-		placeObjectInstances: function(objName, placements, matName, scene) {
+		placeObjectInstances: function(objName, placements, matName, eventData, scene, scale) {
 			// Get the meshes.
 			let meshes = SQUIDSPACE.getLoadedObject(objName);
-			if ((typeof meshes != "object") && !(meshes instanceof Array) && (meshes.length < 1))
+			if ((typeof meshes != "object") || !(meshes instanceof Array) || (meshes.length < 1))
 				 throw `Mesh not loaded for object reference: ''${objName}''.`;
+			
+			//if (!scale) scale = 1;
 		
 			for (instance of placements) {
 				let newMeshes = [];
 				for (mesh of meshes) {
-					// Create an instance and add it to the new meshes.
-					let m = mesh.createInstance(instance[0]);
-					newMeshes.push(m);
+					let m = undefined;
+					if (eventData) {
+						// Create a clone and add it to the new meshes.
+						m = mesh.clone(instance[0]);
+						newMeshes.push(m);
+					}
+					else {
+						// Create an instance and add it to the new meshes.
+						m = mesh.createInstance(instance[0]);
+						newMeshes.push(m);
+					}
 					
 					// Set placement values.
 					m.position = SQUIDSPACE.makeLayoutVector(
@@ -909,17 +949,23 @@ var SQUIDSPACE = function() {
 						//m.rotate(BABYLON.Axis.Y, instance[3]);
 						// TODO: Support other than 'y' axis rotation.
 						m.rotation = new BABYLON.Vector3(0, instance[3], 0);
-						m.position.z -= (pnlwidth / 2);
+						//m.position.z -= (width / 2);
 					}
 					
 					// Set other values.
+					//m.scaling = new BABYLON.Vector3(scale, scale, scale);
 					// TODO: Do we want to add these to placement somehow?
 					m.checkCollisions = true;
 					m.visible = true;
 					// TODO: Fix this. IMPORTANT!
 					//let bv = m.getBoundingInfo().boundingBox.minimum;
 				}
-				SQUIDSPACE.addObjectInstance(instance[0], newMeshes);			
+				SQUIDSPACE.addObjectInstance(instance[0], newMeshes);	
+				
+				// Add event?
+		    	if (eventData) {
+					SQUIDSPACE.attachClickEventToObject(key, "onClickShowPopup", eventData, scene);
+		    	}		
 			}
 		},
 
@@ -1098,40 +1144,49 @@ var SQUIDSPACE = function() {
 		// Public scene management functions.
 		//
 		
-		loadContent: function(contentSpec, scene, overWrite=false) {
+		/** Loads a single content module. 
+		 */
+		loadContentModule: function(contentModule, scene, overWrite=false) {
 			// Load resources from spec using a specific order to avoid dependency issues.
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", contentSpec, {}), modLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("mods", contentModule, {}), modLoaderHooks, 
 							scene, "mods", overWrite)
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", contentSpec, {}), textureLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("textures", contentModule, {}), textureLoaderHooks, 
 							scene, "textures", overWrite)
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", contentSpec, {}), materialLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("materials", contentModule, {}), materialLoaderHooks, 
 							scene, "materials", overWrite)
-			processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", contentSpec, {}), objectLoaderHooks, 
+			processLoaders(SQUIDSPACE.getValIfKeyInDict("objects", contentModule, {}), objectLoaderHooks, 
 							scene, "objects", overWrite)
 			
 			// Do layouts.
-			processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", contentSpec, {}), scene, overWrite);
+			processLayouts(SQUIDSPACE.getValIfKeyInDict("layouts", contentModule, {}), scene, overWrite);
 			
 			// TODO: Attach events.
+		},
+		
+		/** Adds a content module to the 'autoload' list. These are loaded after the world module
+		    and the preload modules. The order they are loaded is undefined.
+		 */
+		addAutoloadModule: function(contentModule) {
+			contentModules.push(contentModule);
 		},
 		
 		/** PoC-specific function to load the passed scene from the world 
 		    and content specs. 
          */
-		buildWorld: function(worldSpec, contentSpecs, scene, overWrite=false) {
+		buildWorld: function(worldModule, preloadContentModuleModules, scene, overWrite=false) {
 			// Assume success.
 			let success = true;
 					 
 			// Verify inputs.
 			// TODO: Add other validation checks, such as object
 			//       member validation.
-			if (typeof worldSpec != "object") {
+			if (typeof worldModule != "object") {
 				SQUIDSPACE.logWarn("buildWorld(): No valid world module supplied.")
 				success = false;
 			}
-			if ((typeof contentSpecs != "object") && !(contentSpecs instanceof Array)) {
+			if ((typeof preloadContentModuleModules != "object") && !(preloadContentModuleModules instanceof Array)) {
 				// Default to empty list.
-				contentSpecs = [];
+				preloadContentModuleModules = [];
 			}
 			if (typeof scene != "object") {
 				SQUIDSPACE.logWarn("buildWorld(): No valid scene supplied.")
@@ -1151,10 +1206,17 @@ var SQUIDSPACE = function() {
 				SQUIDSPACE.logError(`buildWorld(): Prepare Hook Function failed with error ${e}.`)
 			}
 			
-			// Load all the content.
-			SQUIDSPACE.loadContent(worldSpec, scene, overWrite);
-			for (spec of contentSpecs) {
-				SQUIDSPACE.loadContent(spec, scene, overWrite);
+			// Load all the content. We start by loading the world.
+			SQUIDSPACE.loadContentModule(worldModule, scene, overWrite);
+			
+			// Then we load the preload modules.
+			for (module of preloadContentModuleModules) {
+				SQUIDSPACE.loadContentModule(module, scene, overWrite);
+			}
+			
+			// Finally we load the autoload modules.
+			for (module of contentModules) {
+				SQUIDSPACE.loadContentModule(module, scene, overWrite);
 			}
 			
 			// Call build hook.
@@ -1171,14 +1233,16 @@ var SQUIDSPACE = function() {
 			scene.workerCollisions = true; 	
 						
 			// Turn on optimizaton.
+			//*
 			// TODO: Consider if we want to refactor this into SquidCommon as a hook. (New hook?)
 			var options = new BABYLON.SceneOptimizerOptions();
 			options.addOptimization(new BABYLON.HardwareScalingOptimization(0, 1));
-			/* Set Degredation Level - TODO: Come up with a way to make this user settable.
-			BABYLON.SceneOptimizerOptions.LowDegradationAllowed()  
-			BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed()  
-			BABYLON.SceneOptimizerOptions.HighDegradationAllowed() 
-			*/
+			
+			// Set Degredation Level - TODO: Come up with a way to make this user settable.
+			//BABYLON.SceneOptimizerOptions.LowDegradationAllowed()  
+			//BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed()  
+			//BABYLON.SceneOptimizerOptions.HighDegradationAllowed() 
+			
 			options.addOptimization(new BABYLON.SceneOptimizerOptions.ModerateDegradationAllowed());
 			var optimizer = new BABYLON.SceneOptimizer(scene, options);
 			optimizer.targetFrameRate = 40 // TODO: Come up with a way to make this user settable.
@@ -1193,6 +1257,7 @@ var SQUIDSPACE = function() {
 				SQUIDSPACE.logDebug(`Optimizer unable to reach target framerate: ${optimizer.targetFrameRate}`)
 			}
 			optimizer.start(); // Don't need?
+			//*/
 
 			// Done.
 			return success;

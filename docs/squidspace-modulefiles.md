@@ -310,7 +310,7 @@ All resource configuration subsections provide the following standard resource c
 * "dir" – [optional; string; use only if "file-name" is also specified] – Directory containing the file resource; overrides the global "dir" value for the resource section; when doing cacheing also specifies the directory the file is cached in
 	- TODO: Not currently implemented.
 
-* "file-name" – [required if "pack" is "insert" optional if "pack" is "link", string; do not use if "url" is specified, do not use if "pack" is "none"] – Specifies the file resource in the related resource directory; when doing cacheing also specifies the file name of the cached file
+* "file-name" – [required if "pack" is "insert" optional if "pack-options" "action" is "link", string; do not use if "url" is specified, do not use if "pack" is "none"] – Specifies the file resource in the related resource directory; when doing cacheing also specifies the file name of the cached file
 
 * "url" – [optional if "pack" is "link", string containing a fully-qualified URL; do not use if "file-name" is specified, do not use if "pack" is "insert" or "none"] – Specifies the file resource URL
 

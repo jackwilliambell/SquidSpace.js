@@ -118,8 +118,8 @@ if __name__ == '__main__':
     elif arguments['package']:
         logger.warning("Command 'package' not yet implemented.")
     elif arguments['filter']:
-        runFilter(defaultConfig, arguments['<resource_type>'], arguments['<filter_profile>'],
-                   arguments['<file>'], arguments['<output_directory>'])
+        runFilter(defaultConfig, arguments['<filter_profile>'], arguments['<file>'],
+                    arguments['<output_directory>'])
     elif arguments['pipeline']:
         runPipeline(defaultConfig, arguments['<file>'])
     elif arguments['scaffold']:

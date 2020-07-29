@@ -7,7 +7,7 @@ file, including external data files 'packed' into the Javascript module.
 
 TODO: Insert binary file support with BASE-64 conversion.
 
-TODO: Support binary strings and expression strings.
+TODO: Support binary strings.
 
 TODO: Support events and mods.
 
@@ -28,27 +28,44 @@ import sys
 import os
 import json
 
-
 from common import ResourceFlavor, ResourceAction, ModuleConfiguration
+from filters.cleanbabylon import cleanBabylonData
 from sqslogger import logger
 
 
 def insertTextFile(inFilePath, outFile, singleLine = True):
     """Inserts the contents of a text file specified by the in file path into the out file."""
     
-    inFile = open(inFilePath, "r")
-    for line in inFile:
-        if singleLine:
-            outFile.write(line.replace('\n', '\\n').replace('"', '\\"'))
-        else:
-            outFile.write(line.replace('"', '\\"'))
-    inFile.close()
+    root, ex = os.path.splitext(inFilePath)
+    
+    if ex.lower() == ".babylon":
+        # Load Babylon file
+        with open(inFilePath, 'r') as babFile:
+            data = json.load(babFile)
+            babFile.close()
+            cleanBabylonData(data)
+            cleaned = json.dumps(data)
+            if singleLine:
+                outFile.write(cleaned.replace('\n', '\\n').replace('"', '\\"'))
+            else:
+                outFile.write(cleaned.replace('"', '\\"'))
+    else:
+        inFile = open(inFilePath, "r")
+        for line in inFile:
+            if singleLine:
+                outFile.write(line.replace('\n', '\\n').replace('"', '\\"'))
+            else:
+                outFile.write(line.replace('"', '\\"'))
+        inFile.close()
 
 
 def insertText(text, outFile, singleLine = True):
     """Inserts the passed text into the out file."""
     
-    if singleLine:
+    # Is it an expression string?
+    if text.startswith('$='):
+        outFile.write(text[2:])
+    elif singleLine:
         outFile.write(text.replace('\n', '\\n').replace('"', '\\"'))
     else:
         outFile.write(text.replace('"', '\\"'))
@@ -58,9 +75,13 @@ def insertValue(value, outFile, modConfig, baseOffset, singleLine = True):
     """Inserts a value into the out file."""
     
     if isinstance(value, str): # String
-        outFile.write('"')
-        outFile.write(value)
-        outFile.write('"')
+        # Is it an expression string?
+        if value.startswith('$='):
+            outFile.write(value[2:])
+        else:
+            outFile.write('"')
+            outFile.write(value)
+            outFile.write('"')
     elif isinstance(value, bool): # Boolean
         if value:
             outFile.write("true")
