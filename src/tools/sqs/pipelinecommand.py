@@ -31,14 +31,14 @@ def processPipelineForResource(resourceFlavor, elem, scratchDirMgr, modConfig):
     # Get the element config.
     if not "config" in elem:
         # No need to process!
-        logger.warning("pipeline.processPipelineForResource() - No 'config'; process abort with 'True'.")
+        logger.debug("pipeline.processPipelineForResource() - No 'config'; process abort with 'True'.")
         return True
     config = elem["config"]
     
     # Get the cache options from the config.
     if not "cache-options" in config:
         # No need to process!
-        logger.warning("pipeline.processPipelineForResource() - No 'cache-options' in 'config'; process abort with 'True'.")
+        logger.debug("pipeline.processPipelineForResource() - No 'cache-options' in 'config'; process abort with 'True'.")
         return True
     cacheOptions = config["cache-options"]
     
