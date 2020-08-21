@@ -1,6 +1,6 @@
 # SquidSpace.js
 
-SquidSpace.js provides a thin runtime controller wrapper around [Babylon.js](https://www.babylonjs.com/) focused on creating 'walkthrough simulations' of spaces; recreated from real spaces or imaginary. SquidSpace is designed for high extensibility through events and hooks and is driven by 'pack files' containing or referencing 3D content and runtime configuration. The pack file specification provides a Domain Specific Language (DSL) useful for applications using 3D content.
+SquidSpace.js provides a thin runtime controller wrapper around [Babylon.js](https://www.babylonjs.com/) focused on creating 'walkthrough simulations' of spaces; recreated from real spaces or imaginary. SquidSpace is designed for high extensibility through events and hooks and is driven by 'module files' containing or referencing 3D content and runtime configuration. The module file specification provides a Domain Specific Language (DSL) useful for applications using 3D content.
 
 SquidSpace.js is extended with 'mods' and includes a selection of generally useful mods. You can also create your own mods and wire them into SquidSpace.js at runtime.
 
